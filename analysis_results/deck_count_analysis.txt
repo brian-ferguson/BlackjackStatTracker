@@ -1,0 +1,11 @@
+DECK COUNT IMPACT ANALYSIS
+========================================
+
+True counts most affected by deck count (highest variance):
+TC +0: variance = 33.49974762
+TC -1: variance = 14.29916699
+TC +1: variance = 12.24824910
+TC +4: variance = 2.24579142
+TC -4: variance = 2.01707614
+
+Overall variance across all true counts: 3.42832227

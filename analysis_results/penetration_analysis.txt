@@ -1,0 +1,11 @@
+PENETRATION IMPACT ANALYSIS
+========================================
+
+True counts most affected by penetration (highest variance):
+TC +0: variance = 29.70320458
+TC -1: variance = 8.28559920
+TC +1: variance = 6.91131162
+TC +4: variance = 1.52975983
+TC -4: variance = 1.21443342
+
+Overall variance across all true counts: 2.60870918

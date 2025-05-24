@@ -21,8 +21,47 @@ class BlackjackSimulator:
     def __init__(self, num_processes=None):
         self.num_processes = num_processes or multiprocessing.cpu_count()
         
+    def run_penetration_simulation(self, configurations, hands_per_config):
+        """Run simulation for specified deck/penetration configurations"""
+        
+        # Create output directory
+        os.makedirs('simulation_results', exist_ok=True)
+        
+        total_configs = len(configurations)
+        current_config = 0
+        
+        all_results = {}
+        
+        print(f"Running {total_configs} configurations with {self.num_processes} processes")
+        
+        for deck_count, penetration in configurations:
+            current_config += 1
+            
+            if penetration == 0:
+                config_name = f"{deck_count}decks-nopenetration"
+            else:
+                config_name = f"{deck_count}decks-{penetration}penetration"
+            
+            print(f"\nConfig {current_config}/{total_configs}: {config_name}")
+            start_time = time.time()
+            
+            # Run simulation for this configuration
+            result = self._simulate_configuration(deck_count, penetration, hands_per_config)
+            
+            # Store results
+            config_key = (deck_count, penetration)
+            all_results[config_key] = result
+            
+            # Save individual result to CSV with new naming convention
+            self._save_penetration_results(deck_count, penetration, result)
+            
+            elapsed = time.time() - start_time
+            print(f"Completed in {elapsed:.2f} seconds")
+        
+        return all_results
+
     def run_full_simulation(self, deck_counts, penetrations, hands_per_config):
-        """Run simulation for all combinations of deck counts and penetrations"""
+        """Run simulation for all combinations of deck counts and penetrations (legacy method)"""
         
         # Create output directory
         os.makedirs('simulation_results', exist_ok=True)
@@ -117,8 +156,39 @@ class BlackjackSimulator:
             'penetration': penetration
         }
     
+    def _save_penetration_results(self, deck_count, penetration, result):
+        """Save results for a single configuration to CSV with new naming convention"""
+        
+        if penetration == 0:
+            filename = f"simulation_results/{deck_count}decks-nopenetration.csv"
+            penetration_desc = "No penetration (all cards played)"
+        else:
+            filename = f"simulation_results/{deck_count}decks-{penetration}penetration.csv"
+            penetration_desc = f"{penetration} deck penetration"
+        
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            
+            # Write header with metadata
+            writer.writerow(['# Blackjack High-Low Simulation Results'])
+            writer.writerow([f'# Deck Count: {deck_count}'])
+            writer.writerow([f'# Penetration: {penetration_desc}'])
+            writer.writerow([f'# Total Hands: {result["total_hands"]:,}'])
+            writer.writerow([f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+            writer.writerow([])
+            
+            # Write column headers
+            writer.writerow(['True Count', 'Percentage'])
+            
+            # Write data
+            for true_count in range(-10, 11):
+                percentage = result['distribution'][true_count]
+                writer.writerow([true_count, f"{percentage:.6f}"])
+        
+        print(f"Saved results to {filename}")
+
     def _save_configuration_results(self, deck_count, penetration, result):
-        """Save results for a single configuration to CSV"""
+        """Save results for a single configuration to CSV (legacy method)"""
         
         filename = f"simulation_results/{deck_count}deck_{penetration}pen.csv"
         
@@ -152,10 +222,12 @@ def _simulate_hands_worker(args):
     counter = HighLowCounter()
     true_count_distribution = Counter()
     
-    # Calculate penetration point in cards
+    # Calculate how many cards to play before reshuffle
     total_cards = deck_count * 52
-    penetration_cards = int(penetration * 52)
-    reshuffle_point = total_cards - penetration_cards
+    if penetration == 0:  # No penetration = play all cards
+        cards_to_play = total_cards
+    else:  # Penetration = how many decks worth of cards to play
+        cards_to_play = int(penetration * 52)
     
     # Create initial shoe
     shoe = create_deck(deck_count)
@@ -164,7 +236,7 @@ def _simulate_hands_worker(args):
     
     for hand_num in range(num_hands):
         # Check if we need to reshuffle
-        if cards_dealt >= reshuffle_point:
+        if cards_dealt >= cards_to_play:
             shoe = create_deck(deck_count)
             random.shuffle(shoe)
             cards_dealt = 0
@@ -176,6 +248,14 @@ def _simulate_hands_worker(args):
         
         # Deal 2-7 cards per hand (typical range for blackjack hands)
         cards_this_hand = random.randint(2, 7)
+        
+        # Make sure we don't exceed the penetration limit
+        if cards_dealt + cards_this_hand > cards_to_play:
+            # Reshuffle now
+            shoe = create_deck(deck_count)
+            random.shuffle(shoe)
+            cards_dealt = 0
+            counter.reset()
         
         if len(shoe) < cards_this_hand:
             # Emergency reshuffle if we run out of cards

@@ -33,16 +33,25 @@ def run_simulation(num_hands=1000000, num_processes=None):
     print(f"Simulating {num_hands:,} hands per configuration")
     print("=" * 60)
     
-    # Define simulation parameters
-    deck_counts = [1, 2, 3, 4, 6, 8]
-    penetrations = [5.5, 5.25, 5.0, 4.75, 4.5, 4.25, 4.0, 3.75, 3.5]
+    # Generate all deck/penetration combinations
+    configurations = generate_penetration_configurations()
+    
+    print(f"Total configurations to simulate: {len(configurations)}")
+    print("\nConfigurations:")
+    for config in configurations:
+        deck_count, penetration = config
+        if penetration == 0:
+            print(f"  {deck_count}decks-nopenetration")
+        else:
+            print(f"  {deck_count}decks-{penetration}penetration")
+    print("=" * 60)
     
     # Create simulator
     simulator = BlackjackSimulator(num_processes=num_processes)
     
     # Run simulations
     try:
-        results = simulator.run_full_simulation(deck_counts, penetrations, num_hands)
+        results = simulator.run_penetration_simulation(configurations, num_hands)
         
         # Analyze results
         analyzer = SimulationAnalyzer(results)
@@ -57,6 +66,25 @@ def run_simulation(num_hands=1000000, num_processes=None):
     except Exception as e:
         print(f"Error during simulation: {e}")
         sys.exit(1)
+
+def generate_penetration_configurations():
+    """Generate all deck/penetration combinations according to specifications"""
+    deck_counts = [1, 2, 3, 4, 6, 8]
+    configurations = []
+    
+    for deck_count in deck_counts:
+        # Start with no penetration (all cards played)
+        configurations.append((deck_count, 0))
+        
+        # Generate penetrations going down by 0.25 until reaching half the deck count
+        current_penetration = deck_count - 0.25
+        min_penetration = deck_count / 2
+        
+        while current_penetration >= min_penetration:
+            configurations.append((deck_count, current_penetration))
+            current_penetration -= 0.25
+    
+    return configurations
 
 def run_web_interface():
     """Run the web interface"""
