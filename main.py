@@ -27,10 +27,10 @@ def main():
     else:
         run_web_interface()
 
-def run_simulation(num_hands=1000000, num_processes=None):
+def run_simulation(num_shoes=1000000, num_processes=None):
     """Run the complete simulation suite"""
     print("Starting Blackjack High-Low Card Counting Simulation")
-    print(f"Simulating {num_hands:,} hands per configuration")
+    print(f"Simulating {num_shoes:,} shoes per configuration")
     print("=" * 60)
     
     # Generate all deck/penetration combinations
@@ -51,7 +51,7 @@ def run_simulation(num_hands=1000000, num_processes=None):
     
     # Run simulations
     try:
-        results = simulator.run_penetration_simulation(configurations, num_hands)
+        results = simulator.run_penetration_simulation(configurations, num_shoes)
         
         # Analyze results
         analyzer = SimulationAnalyzer(results)

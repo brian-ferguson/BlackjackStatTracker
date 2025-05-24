@@ -21,7 +21,7 @@ class BlackjackSimulator:
     def __init__(self, num_processes=None):
         self.num_processes = num_processes or multiprocessing.cpu_count()
         
-    def run_penetration_simulation(self, configurations, hands_per_config):
+    def run_penetration_simulation(self, configurations, shoes_per_config):
         """Run simulation for specified deck/penetration configurations"""
         
         # Create output directory
@@ -46,7 +46,7 @@ class BlackjackSimulator:
             start_time = time.time()
             
             # Run simulation for this configuration
-            result = self._simulate_configuration(deck_count, penetration, hands_per_config)
+            result = self._simulate_configuration(deck_count, penetration, shoes_per_config)
             
             # Store results
             config_key = (deck_count, penetration)
@@ -100,20 +100,20 @@ class BlackjackSimulator:
         
         return all_results
     
-    def _simulate_configuration(self, deck_count, penetration, num_hands):
+    def _simulate_configuration(self, deck_count, penetration, num_shoes):
         """Simulate a specific configuration using parallel processing"""
         
-        # Split work across processes
-        hands_per_process = num_hands // self.num_processes
-        remaining_hands = num_hands % self.num_processes
+        # Split work across processes (now dividing shoes, not hands)
+        shoes_per_process = num_shoes // self.num_processes
+        remaining_shoes = num_shoes % self.num_processes
         
         tasks = []
         for i in range(self.num_processes):
-            process_hands = hands_per_process
-            if i < remaining_hands:
-                process_hands += 1
+            process_shoes = shoes_per_process
+            if i < remaining_shoes:
+                process_shoes += 1
             
-            tasks.append((deck_count, penetration, process_hands, i))
+            tasks.append((deck_count, penetration, process_shoes, i))
         
         # Run simulations in parallel
         true_count_distributions = []
@@ -152,6 +152,7 @@ class BlackjackSimulator:
         return {
             'distribution': percentage_distribution,
             'total_hands': total_hands_simulated,
+            'total_shoes': num_shoes,
             'deck_count': deck_count,
             'penetration': penetration
         }
@@ -173,6 +174,7 @@ class BlackjackSimulator:
             writer.writerow(['# Blackjack High-Low Simulation Results'])
             writer.writerow([f'# Deck Count: {deck_count}'])
             writer.writerow([f'# Penetration: {penetration_desc}'])
+            writer.writerow([f'# Total Shoes: {result["total_shoes"]:,}'])
             writer.writerow([f'# Total Hands: {result["total_hands"]:,}'])
             writer.writerow([f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
             writer.writerow([])
@@ -215,7 +217,7 @@ class BlackjackSimulator:
 
 def _simulate_hands_worker(args):
     """Worker function for parallel simulation"""
-    deck_count, penetration, num_hands, process_id = args
+    deck_count, penetration, num_shoes, process_id = args
     
     # Initialize for this process
     random.seed()  # Each process gets different random seed
@@ -229,55 +231,43 @@ def _simulate_hands_worker(args):
     else:  # Penetration = how many decks worth of cards to play
         cards_to_play = int(penetration * 52)
     
-    # Create initial shoe
-    shoe = create_deck(deck_count)
-    random.shuffle(shoe)
-    cards_dealt = 0
+    total_hands_counted = 0
     
-    for hand_num in range(num_hands):
-        # Check if we need to reshuffle
-        if cards_dealt >= cards_to_play:
-            shoe = create_deck(deck_count)
-            random.shuffle(shoe)
-            cards_dealt = 0
-            counter.reset()
+    for shoe_num in range(num_shoes):
+        # Create and shuffle new shoe
+        shoe = create_deck(deck_count)
+        random.shuffle(shoe)
+        cards_dealt = 0
+        counter.reset()
         
-        # Deal a hand (simplified - just deal cards to track counting)
-        # In real blackjack, this would be more complex with player/dealer hands
-        # For counting analysis, we just need to track cards dealt
-        
-        # Deal 2-7 cards per hand (typical range for blackjack hands)
-        cards_this_hand = random.randint(2, 7)
-        
-        # Make sure we don't exceed the penetration limit
-        if cards_dealt + cards_this_hand > cards_to_play:
-            # Reshuffle now
-            shoe = create_deck(deck_count)
-            random.shuffle(shoe)
-            cards_dealt = 0
-            counter.reset()
-        
-        if len(shoe) < cards_this_hand:
-            # Emergency reshuffle if we run out of cards
-            shoe = create_deck(deck_count)
-            random.shuffle(shoe)
-            cards_dealt = 0
-            counter.reset()
-        
-        # Deal the cards and update count
-        for _ in range(cards_this_hand):
-            if shoe:
-                card = shoe.pop()
-                counter.add_card(card)
-                cards_dealt += 1
-        
-        # Calculate true count (only count cards that will actually be dealt)
-        remaining_cards_in_play = cards_to_play - cards_dealt
-        remaining_decks = calculate_remaining_decks(remaining_cards_in_play)
-        true_count = counter.get_true_count(remaining_decks)
-        
-        # Clamp true count to range [-10, +10] for analysis
-        clamped_true_count = max(-10, min(10, true_count))
-        true_count_distribution[clamped_true_count] += 1
+        # Deal through the shoe until penetration reached
+        while cards_dealt < cards_to_play:
+            # Deal 2-7 cards per hand (typical range for blackjack hands)
+            cards_this_hand = random.randint(2, 7)
+            
+            # Make sure we don't exceed the penetration limit
+            if cards_dealt + cards_this_hand > cards_to_play:
+                break
+            
+            if len(shoe) < cards_this_hand:
+                # Should not happen with proper penetration calculation
+                break
+            
+            # Deal the cards and update count
+            for _ in range(cards_this_hand):
+                if shoe and cards_dealt < cards_to_play:
+                    card = shoe.pop()
+                    counter.add_card(card)
+                    cards_dealt += 1
+            
+            # Calculate true count (only count cards that will actually be dealt)
+            remaining_cards_in_play = cards_to_play - cards_dealt
+            remaining_decks = calculate_remaining_decks(remaining_cards_in_play)
+            true_count = counter.get_true_count(remaining_decks)
+            
+            # Clamp true count to range [-10, +10] for analysis
+            clamped_true_count = max(-10, min(10, true_count))
+            true_count_distribution[clamped_true_count] += 1
+            total_hands_counted += 1
     
     return true_count_distribution
