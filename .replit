@@ -1,0 +1,33 @@
+modules = ["python-3.11"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["cairo", "ffmpeg-full", "freetype", "ghostscript", "glibcLocales", "gobject-introspection", "gtk3", "pkg-config", "qhull", "tcl", "tk"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Blackjack Simulation Server"
+
+[[workflows.workflow]]
+name = "Blackjack Simulation Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pip install flask numpy pandas matplotlib && python main.py --mode web"
+waitForPort = 5000
+
+[deployment]
+run = ["sh", "-c", "pip install flask numpy pandas matplotlib && python main.py --mode web"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
