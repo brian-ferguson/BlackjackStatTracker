@@ -1,0 +1,45 @@
+$ python gpu_simulation.py 100
+GPU acceleration available with CuPy
+GPU Simulation: 100 shoes per configuration
+Total configurations: 54
+GPU Available: True
+============================================================
+
+GPU Configuration 1/54:
+Running 1 deck(s), penetration 0, 100 shoes...
+  Processing 1 GPU batches of 10000 hands each...
+  GPU results saved to simulation_results/1decks-nopenetration-gpu.csv
+
+GPU Configuration 2/54:
+Running 1 deck(s), penetration 0.75, 100 shoes...
+  Processing 1 GPU batches of 10000 hands each...
+  GPU results saved to simulation_results/1decks-0.75penetration-gpu.csv
+
+GPU Configuration 3/54:
+Running 1 deck(s), penetration 0.5, 100 shoes...
+  Processing 1 GPU batches of 10000 hands each...
+Traceback (most recent call last):
+  File "C:\src\BlackjackStatTracker\gpu_simulation.py", line 265, in <module>
+    run_gpu_simulation(num_shoes)
+  File "C:\src\BlackjackStatTracker\gpu_simulation.py", line 250, in run_gpu_simulation
+    stats = simulator.simulate_hands_gpu(deck_count, penetration, num_shoes)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\src\BlackjackStatTracker\gpu_simulation.py", line 106, in simulate_hands_gpu
+    decks = self.create_gpu_deck(deck_count, batch_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\src\BlackjackStatTracker\gpu_simulation.py", line 37, in create_gpu_deck
+    cp.random.shuffle(decks[i])
+  File "C:\Users\brian\AppData\Local\Programs\Python\Python312\Lib\site-packages\cupy\random\_permutations.py", line 14, in shuffle
+    return rs.shuffle(a)
+           ^^^^^^^^^^^^^
+  File "C:\Users\brian\AppData\Local\Programs\Python\Python312\Lib\site-packages\cupy\random\_generator.py", line 1168, in shuffle
+    a[:] = a[self._permutation(len(a))]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brian\AppData\Local\Programs\Python\Python312\Lib\site-packages\cupy\random\_generator.py", line 1183, in _permutation
+    array = cupy.argsort(sample)
+            ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\brian\AppData\Local\Programs\Python\Python312\Lib\site-packages\cupy\_sorting\sort.py", line 116, in argsort
+    return a.argsort(axis=axis)
+           ^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+
