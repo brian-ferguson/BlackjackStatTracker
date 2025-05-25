@@ -8,7 +8,7 @@ class BlackjackGame:
     """Simple blackjack game engine for edge calculation"""
     
     def __init__(self):
-        self.bet_amount = 10  # Fixed $10 bet
+        self.base_bet = 5  # Base betting unit
     
     def card_value(self, card):
         """Get numeric value of a card for blackjack"""
@@ -150,10 +150,32 @@ class BlackjackGame:
         else:  # 17+
             return 'stand'
     
+    def get_bet_amount(self, true_count):
+        """Calculate bet amount based on true count using specified bet spread"""
+        if true_count <= 0:
+            return 0  # Sit out for TC 0 and below
+        elif true_count == 1:
+            return self.base_bet  # $5
+        elif true_count == 2:
+            return 2 * self.base_bet  # $10
+        elif true_count == 3:
+            return 3 * self.base_bet  # $15
+        elif true_count == 4:
+            return 5 * self.base_bet  # $25
+        elif true_count == 5:
+            return 5 * self.base_bet  # $25
+        else:  # TC 6+
+            return 5 * self.base_bet  # $25
+    
     def play_hand(self, shoe, true_count, counter):
         """Play a single blackjack hand and return net result"""
         if len(shoe) < 10:  # Need enough cards for a hand
             return 0, 0  # No bet placed
+        
+        # Check bet amount based on true count
+        bet_amount = self.get_bet_amount(true_count)
+        if bet_amount == 0:
+            return 0, 0  # Sit out this hand
         
         # Deal initial cards and update count
         player_hand = []
@@ -179,7 +201,6 @@ class BlackjackGame:
         
         dealer_up_card = dealer_hand[0]
         
-        bet_amount = self.bet_amount
         total_bet = bet_amount
         
         # Check for blackjacks
