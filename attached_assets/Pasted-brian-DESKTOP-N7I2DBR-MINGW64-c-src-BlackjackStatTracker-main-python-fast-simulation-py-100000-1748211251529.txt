@@ -1,0 +1,43 @@
+brian@DESKTOP-N7I2DBR MINGW64 /c/src/BlackjackStatTracker (main)
+$ python fast_simulation.py 1000000
+Fast Simulation: 1,000,000 shoes per configuration
+Total configurations: 54
+============================================================
+
+Configuration 1/54:
+  Running 1 deck(s), penetration 0, 1,000,000 shoes...
+    Progress: 0.0% (1/1,000,000)
+    Progress: 5.0% (50,001/1,000,000) - ETA: 62s
+    Progress: 10.0% (100,001/1,000,000) - ETA: 58s
+    Progress: 15.0% (150,001/1,000,000) - ETA: 54s
+    Progress: 20.0% (200,001/1,000,000) - ETA: 51s
+    Progress: 25.0% (250,001/1,000,000) - ETA: 48s
+    Progress: 30.0% (300,001/1,000,000) - ETA: 45s
+    Progress: 35.0% (350,001/1,000,000) - ETA: 41s
+    Progress: 40.0% (400,001/1,000,000) - ETA: 38s
+    Progress: 45.0% (450,001/1,000,000) - ETA: 35s
+    Progress: 50.0% (500,001/1,000,000) - ETA: 32s
+    Progress: 55.0% (550,001/1,000,000) - ETA: 28s
+    Progress: 60.0% (600,001/1,000,000) - ETA: 25s
+    Progress: 65.0% (650,001/1,000,000) - ETA: 22s
+    Progress: 70.0% (700,001/1,000,000) - ETA: 19s
+    Progress: 75.0% (750,001/1,000,000) - ETA: 16s
+    Progress: 80.0% (800,001/1,000,000) - ETA: 13s
+    Progress: 85.0% (850,001/1,000,000) - ETA: 9s
+    Progress: 90.0% (900,001/1,000,000) - ETA: 6s
+    Progress: 95.0% (950,001/1,000,000) - ETA: 3s
+    Progress: 100.0% (1,000,000/1,000,000) - ETA: 0s
+    Completed in 64.2s! Total hands: 3,086,994
+Traceback (most recent call last):
+  File "C:\src\BlackjackStatTracker\fast_simulation.py", line 200, in <module>
+    run_fast_simulation(num_shoes)
+  File "C:\src\BlackjackStatTracker\fast_simulation.py", line 177, in run_fast_simulation
+    save_results_fast(deck_count, penetration, num_shoes, stats, total_hands)
+  File "C:\src\BlackjackStatTracker\fast_simulation.py", line 117, in save_results_fast
+    writer.writerow(['# Bet Spread: TC\u22640 sit out, TC1=$5, TC2=$10, TC3=$15, TC4+=$25'])
+  File "C:\Users\brian\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2264' in position 17: character maps to <undefined>
+
+brian@DESKTOP-N7I2DBR MINGW64 /c/src/BlackjackStatTracker (main)

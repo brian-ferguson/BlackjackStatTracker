@@ -114,7 +114,7 @@ def save_results_fast(deck_count, penetration, num_shoes, true_count_stats, tota
         writer.writerow([f'# Penetration: {penetration_desc}'])
         writer.writerow([f'# Total Shoes: {num_shoes:,}'])
         writer.writerow([f'# Total Hands: {total_hands:,}'])
-        writer.writerow(['# Bet Spread: TC≤0 sit out, TC1=$5, TC2=$10, TC3=$15, TC4+=$25'])
+        writer.writerow(['# Bet Spread: TC<=0 sit out, TC1=$5, TC2=$10, TC3=$15, TC4+=$25'])
         writer.writerow([f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
         writer.writerow([])
         
