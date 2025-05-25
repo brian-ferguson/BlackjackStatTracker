@@ -22,7 +22,9 @@ def create_deck(num_decks=1):
 
 def calculate_remaining_decks(remaining_cards):
     """Calculate remaining decks from remaining cards"""
-    return max(0.5, remaining_cards / 52.0)  # Minimum 0.5 to avoid division by zero
+    if remaining_cards <= 0:
+        return 1.0  # Avoid division by zero, use 1 deck as default
+    return remaining_cards / 52.0
 
 def format_percentage(value, decimal_places=6):
     """Format percentage with specified decimal places"""

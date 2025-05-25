@@ -263,11 +263,14 @@ def _simulate_hands_worker(args):
             # Calculate true count based on actual remaining cards in shoe
             remaining_cards_in_shoe = len(shoe)
             remaining_decks = calculate_remaining_decks(remaining_cards_in_shoe)
-            true_count = counter.get_true_count(remaining_decks)
+            true_count_precise = counter.get_true_count_precise(remaining_decks)
             
-            # Clamp true count to range [-10, +10] for analysis
-            clamped_true_count = max(-10, min(10, true_count))
-            true_count_distribution[clamped_true_count] += 1
+            # Round to nearest integer for distribution tracking
+            true_count_rounded = round(true_count_precise)
+            
+            # Only track true counts in the range [-10, +10], skip others
+            if -10 <= true_count_rounded <= 10:
+                true_count_distribution[true_count_rounded] += 1
             total_hands_counted += 1
     
     return true_count_distribution

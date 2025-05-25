@@ -2,25 +2,25 @@ BLACKJACK HIGH-LOW SIMULATION SUMMARY
 ==================================================
 
 Total configurations simulated: 54
-Total hands simulated: 540,000
+Total hands simulated: 2,408,840
 
 Most frequently observed true counts (global average):
-TC +0: 22.9278%
-TC -1: 15.8359%
-TC +1: 15.4520%
-TC -2: 9.1181%
-TC +2: 9.0535%
+TC +0: 23.3412%
+TC +1: 15.7855%
+TC -1: 15.7775%
+TC -2: 8.9232%
+TC +2: 8.8845%
 
 Least frequently observed true counts:
-TC +9: 0.2928%
-TC -9: 0.3056%
-TC +8: 0.6107%
-TC -8: 0.6469%
-TC +7: 0.6476%
+TC -10: 0.3024%
+TC +10: 0.3121%
+TC -9: 0.4149%
+TC +9: 0.4151%
+TC -8: 0.5385%
 
 True counts with highest variance across configurations:
-TC +0: std dev = 6.343645
-TC -1: std dev = 3.576274
-TC +1: std dev = 3.187519
-TC +4: std dev = 1.411300
-TC -4: std dev = 1.394836
+TC +0: std dev = 5.981156
+TC +1: std dev = 3.014752
+TC -1: std dev = 2.945701
+TC +4: std dev = 1.054565
+TC -4: std dev = 1.045920
