@@ -266,11 +266,7 @@ def _simulate_hands_worker(args):
     game = BlackjackGame()
     
     # Track frequency and financial results for each true count
-    true_count_stats = defaultdict(lambda: {
-        'frequency': 0,
-        'total_profit': 0.0,
-        'total_wagered': 0.0
-    })
+    true_count_stats = {}
     
     # Calculate how many cards to play before reshuffle
     total_cards = deck_count * 52
@@ -302,6 +298,12 @@ def _simulate_hands_worker(args):
                 profit, bet_amount = game.play_hand(shoe, true_count_rounded, counter)
                 
                 if bet_amount > 0:  # Hand was actually played
+                    if true_count_rounded not in true_count_stats:
+                        true_count_stats[true_count_rounded] = {
+                            'frequency': 0,
+                            'total_profit': 0.0,
+                            'total_wagered': 0.0
+                        }
                     true_count_stats[true_count_rounded]['frequency'] += 1
                     true_count_stats[true_count_rounded]['total_profit'] += profit
                     true_count_stats[true_count_rounded]['total_wagered'] += bet_amount
