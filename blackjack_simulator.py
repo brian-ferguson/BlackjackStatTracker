@@ -116,8 +116,14 @@ class BlackjackSimulator:
             
             tasks.append((deck_count, penetration, process_shoes, i))
         
-        # Run simulations in parallel
+        # For small simulations, use single process to avoid overhead
+        if num_shoes <= 50:
+            print(f"  Using single process for {num_shoes} shoes")
+            return _simulate_hands_worker((deck_count, penetration, num_shoes, 0))
+        
+        # Run simulations in parallel for large datasets
         worker_results = []
+        print(f"  Using {self.num_processes} processes")
         
         with ProcessPoolExecutor(max_workers=self.num_processes) as executor:
             future_to_task = {
