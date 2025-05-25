@@ -260,9 +260,9 @@ def _simulate_hands_worker(args):
                     counter.add_card(card)
                     cards_dealt += 1
             
-            # Calculate true count (only count cards that will actually be dealt)
-            remaining_cards_in_play = cards_to_play - cards_dealt
-            remaining_decks = calculate_remaining_decks(remaining_cards_in_play)
+            # Calculate true count based on actual remaining cards in shoe
+            remaining_cards_in_shoe = len(shoe)
+            remaining_decks = calculate_remaining_decks(remaining_cards_in_shoe)
             true_count = counter.get_true_count(remaining_decks)
             
             # Clamp true count to range [-10, +10] for analysis
