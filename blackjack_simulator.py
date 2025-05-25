@@ -247,12 +247,26 @@ class BlackjackSimulator:
             writer.writerow([])
             
             # Write column headers
-            writer.writerow(['True Count', 'Percentage'])
+            writer.writerow(['True Count', 'Frequency', 'Percentage', 'Player Edge', 'Total Profit', 'Total Wagered'])
             
             # Write data
             for true_count in range(-10, 11):
                 percentage = result['distribution'][true_count]
-                writer.writerow([true_count, f"{percentage:.6f}"])
+                edge_info = result.get('edge_data', {}).get(true_count, {
+                    'frequency': 0,
+                    'edge': 0.0,
+                    'total_profit': 0.0,
+                    'total_wagered': 0.0
+                })
+                
+                writer.writerow([
+                    true_count,
+                    edge_info['frequency'],
+                    f"{percentage:.6f}",
+                    f"{edge_info['edge']:.6f}",
+                    f"{edge_info['total_profit']:.2f}",
+                    f"{edge_info['total_wagered']:.2f}"
+                ])
         
         print(f"Saved results to {filename}")
 
