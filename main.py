@@ -51,14 +51,13 @@ def run_simulation(num_shoes=1000000, num_processes=None):
     
     # Run simulations
     try:
-        results = simulator.run_penetration_simulation(configurations, num_shoes)
-        
-        # Analyze results
-        analyzer = SimulationAnalyzer(results)
-        analyzer.generate_analysis_report()
+        for deck_count, penetration in configurations:
+            print(f"\nRunning {deck_count} deck(s), {penetration} penetration with {num_shoes} shoes...")
+            result = simulator._simulate_configuration(deck_count, penetration, num_shoes)
+            simulator._save_penetration_results(deck_count, penetration, result)
         
         print("\nSimulation completed successfully!")
-        print("Results saved to CSV files and analysis report generated.")
+        print("Results saved to CSV files with edge calculations.")
         
     except KeyboardInterrupt:
         print("\nSimulation interrupted by user.")
