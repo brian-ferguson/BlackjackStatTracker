@@ -197,21 +197,36 @@ class BlackjackSimulator:
             writer = csv.writer(csvfile)
             
             # Write header with metadata
-            writer.writerow(['# Blackjack High-Low Simulation Results'])
+            writer.writerow(['# Blackjack High-Low Simulation Results with Player Edge Analysis'])
             writer.writerow([f'# Deck Count: {deck_count}'])
             writer.writerow([f'# Penetration: {penetration_desc}'])
             writer.writerow([f'# Total Shoes: {result["total_shoes"]:,}'])
             writer.writerow([f'# Total Hands: {result["total_hands"]:,}'])
+            writer.writerow([f'# Fixed Bet Amount: $10 per hand'])
             writer.writerow([f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
             writer.writerow([])
             
             # Write column headers
-            writer.writerow(['True Count', 'Percentage'])
+            writer.writerow(['True Count', 'Frequency', 'Percentage', 'Player Edge', 'Total Profit', 'Total Wagered'])
             
             # Write data
             for true_count in range(-10, 11):
                 percentage = result['distribution'][true_count]
-                writer.writerow([true_count, f"{percentage:.6f}"])
+                edge_info = result.get('edge_data', {}).get(true_count, {
+                    'frequency': 0,
+                    'edge': 0.0,
+                    'total_profit': 0.0,
+                    'total_wagered': 0.0
+                })
+                
+                writer.writerow([
+                    true_count,
+                    edge_info['frequency'],
+                    f"{percentage:.6f}",
+                    f"{edge_info['edge']:.6f}",
+                    f"{edge_info['total_profit']:.2f}",
+                    f"{edge_info['total_wagered']:.2f}"
+                ])
         
         print(f"Saved results to {filename}")
 
@@ -292,15 +307,7 @@ def _simulate_hands_worker(args):
                     true_count_stats[true_count_rounded]['total_wagered'] += bet_amount
                     total_hands_played += 1
             
-            # Update card count based on cards that were dealt during the hand
-            # Note: This is an approximation since cards were removed by play_hand
+            # Update cards dealt counter
             cards_dealt = total_cards - len(shoe)
-            
-            # Update running count for remaining cards in shoe
-            # This is a simplification - in reality we'd track each card dealt
-            if len(shoe) > 0:
-                # Estimate count change based on cards dealt (rough approximation)
-                cards_used_this_hand = min(6, cards_dealt - (total_cards - len(shoe) - 6))
-                # We'll recalculate the count fresh each time for accuracy
     
     return true_count_stats
