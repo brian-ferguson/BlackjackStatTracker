@@ -45,43 +45,109 @@ class BlackjackGame:
         return len(hand) == 2 and self.hand_value(hand) == 21
     
     def basic_strategy_decision(self, player_hand, dealer_up_card, can_double=True, can_split=False):
-        """Basic strategy decision (simplified)"""
+        """Complete basic strategy decision"""
         player_total = self.hand_value(player_hand)
         dealer_value = self.card_value(dealer_up_card)
         
-        # Handle soft hands (with ace counted as 11)
-        has_soft_ace = 'A' in player_hand and player_total <= 21
-        
+        # Handle pairs first
         if can_split and len(player_hand) == 2 and player_hand[0] == player_hand[1]:
-            # Splitting logic (simplified)
-            if player_hand[0] == 'A' or player_hand[0] == '8':
-                return 'split'
-            elif player_hand[0] in ['2', '3', '6', '7', '9'] and dealer_value <= 6:
-                return 'split'
+            pair_value = player_hand[0]
+            if pair_value == 'A' or pair_value == '8':
+                return 'split'  # Always split A-A and 8-8
+            elif pair_value in ['2', '3']:
+                return 'split' if dealer_value >= 4 and dealer_value <= 7 else 'hit'
+            elif pair_value == '4':
+                return 'hit'  # Never split 4-4
+            elif pair_value == '5':
+                # Treat as hard 10
+                return 'double' if dealer_value <= 9 and can_double else 'hit'
+            elif pair_value == '6':
+                return 'split' if dealer_value <= 6 else 'hit'
+            elif pair_value == '7':
+                return 'split' if dealer_value <= 7 else 'hit'
+            elif pair_value == '9':
+                if dealer_value in [7, 10, 11]:  # 11 = Ace
+                    return 'stand'
+                else:
+                    return 'split'
+            elif pair_value in ['10', 'J', 'Q', 'K']:
+                return 'stand'  # Never split 10s
         
-        if has_soft_ace and player_total >= 13 and player_total <= 18:
-            # Soft hand strategy (simplified)
-            if player_total <= 17 and dealer_value >= 7:
-                return 'hit'
-            elif player_total in [15, 16] and dealer_value in [4, 5, 6] and can_double:
-                return 'double'
-            elif player_total >= 18:
+        # Handle soft hands (with ace counted as 11)
+        has_soft_ace = 'A' in player_hand and player_total <= 21 and len(player_hand) >= 2
+        aces_count = player_hand.count('A')
+        
+        if has_soft_ace and aces_count == 1:
+            soft_value = player_total - 11  # The non-ace part
+            if soft_value == 2:  # A,2 (soft 13)
+                if dealer_value in [5, 6] and can_double:
+                    return 'double'
+                else:
+                    return 'hit'
+            elif soft_value == 3:  # A,3 (soft 14)
+                if dealer_value in [5, 6] and can_double:
+                    return 'double'
+                else:
+                    return 'hit'
+            elif soft_value == 4:  # A,4 (soft 15)
+                if dealer_value in [4, 5, 6] and can_double:
+                    return 'double'
+                else:
+                    return 'hit'
+            elif soft_value == 5:  # A,5 (soft 16)
+                if dealer_value in [4, 5, 6] and can_double:
+                    return 'double'
+                else:
+                    return 'hit'
+            elif soft_value == 6:  # A,6 (soft 17)
+                if dealer_value in [3, 4, 5, 6] and can_double:
+                    return 'double'
+                else:
+                    return 'hit'
+            elif soft_value == 7:  # A,7 (soft 18)
+                if dealer_value in [3, 4, 5, 6] and can_double:
+                    return 'double'
+                elif dealer_value in [2, 7, 8]:
+                    return 'stand'
+                else:  # 9, 10, A
+                    return 'hit'
+            elif soft_value == 8:  # A,8 (soft 19)
+                if dealer_value == 6 and can_double:
+                    return 'double'
+                else:
+                    return 'stand'
+            elif soft_value >= 9:  # A,9+ (soft 20+)
                 return 'stand'
-            else:
-                return 'hit'
         
         # Hard hand strategy
         if player_total <= 8:
             return 'hit'
         elif player_total == 9:
-            return 'double' if dealer_value in [3, 4, 5, 6] and can_double else 'hit'
+            if dealer_value in [3, 4, 5, 6] and can_double:
+                return 'double'
+            else:
+                return 'hit'
         elif player_total == 10:
-            return 'double' if dealer_value <= 9 and can_double else 'hit'
+            if dealer_value <= 9 and can_double:
+                return 'double'
+            else:
+                return 'hit'
         elif player_total == 11:
-            return 'double' if can_double else 'hit'
-        elif player_total <= 16:
-            return 'hit' if dealer_value >= 7 else 'stand'
-        else:
+            if can_double:
+                return 'double'
+            else:
+                return 'hit'
+        elif player_total == 12:
+            if dealer_value in [4, 5, 6]:
+                return 'stand'
+            else:
+                return 'hit'
+        elif player_total in [13, 14, 15, 16]:
+            if dealer_value <= 6:
+                return 'stand'
+            else:
+                return 'hit'
+        else:  # 17+
             return 'stand'
     
     def play_hand(self, shoe, true_count, counter):
