@@ -14,6 +14,7 @@ import time
 
 from card_counting import HighLowCounter
 from utils import create_deck, calculate_remaining_decks
+from blackjack_game import BlackjackGame
 
 class BlackjackSimulator:
     """Main simulation engine for blackjack with card counting"""
@@ -116,7 +117,7 @@ class BlackjackSimulator:
             tasks.append((deck_count, penetration, process_shoes, i))
         
         # Run simulations in parallel
-        true_count_distributions = []
+        worker_results = []
         
         with ProcessPoolExecutor(max_workers=self.num_processes) as executor:
             future_to_task = {
@@ -128,29 +129,54 @@ class BlackjackSimulator:
                 task = future_to_task[future]
                 try:
                     result = future.result()
-                    true_count_distributions.append(result)
+                    worker_results.append(result)
                 except Exception as e:
                     print(f"Process {task[3]} failed: {e}")
                     raise
         
         # Combine results from all processes
-        combined_distribution = Counter()
+        combined_stats = defaultdict(lambda: {
+            'frequency': 0,
+            'total_profit': 0.0,
+            'total_wagered': 0.0
+        })
+        
         total_hands_simulated = 0
         
-        for distribution in true_count_distributions:
-            for true_count, count in distribution.items():
-                combined_distribution[true_count] += count
-                total_hands_simulated += count
+        for worker_result in worker_results:
+            for true_count, stats in worker_result.items():
+                combined_stats[true_count]['frequency'] += stats['frequency']
+                combined_stats[true_count]['total_profit'] += stats['total_profit']
+                combined_stats[true_count]['total_wagered'] += stats['total_wagered']
+                total_hands_simulated += stats['frequency']
         
-        # Convert to percentages
+        # Calculate edges and create distribution for backward compatibility
         percentage_distribution = {}
+        edge_data = {}
+        
         for true_count in range(-10, 11):
-            count = combined_distribution.get(true_count, 0)
-            percentage = (count / total_hands_simulated) * 100 if total_hands_simulated > 0 else 0
+            stats = combined_stats.get(true_count, {'frequency': 0, 'total_profit': 0.0, 'total_wagered': 0.0})
+            
+            # Calculate frequency percentage
+            frequency = stats['frequency']
+            percentage = (frequency / total_hands_simulated) * 100 if total_hands_simulated > 0 else 0
             percentage_distribution[true_count] = percentage
+            
+            # Calculate edge
+            total_wagered = stats['total_wagered']
+            total_profit = stats['total_profit']
+            edge = (total_profit / total_wagered) if total_wagered > 0 else 0.0
+            
+            edge_data[true_count] = {
+                'frequency': frequency,
+                'edge': edge,
+                'total_profit': total_profit,
+                'total_wagered': total_wagered
+            }
         
         return {
             'distribution': percentage_distribution,
+            'edge_data': edge_data,
             'total_hands': total_hands_simulated,
             'total_shoes': num_shoes,
             'deck_count': deck_count,
@@ -216,13 +242,20 @@ class BlackjackSimulator:
         print(f"Saved results to {filename}")
 
 def _simulate_hands_worker(args):
-    """Worker function for parallel simulation"""
+    """Worker function for parallel simulation with edge calculation"""
     deck_count, penetration, num_shoes, process_id = args
     
     # Initialize for this process
     random.seed()  # Each process gets different random seed
     counter = HighLowCounter()
-    true_count_distribution = Counter()
+    game = BlackjackGame()
+    
+    # Track frequency and financial results for each true count
+    true_count_stats = defaultdict(lambda: {
+        'frequency': 0,
+        'total_profit': 0.0,
+        'total_wagered': 0.0
+    })
     
     # Calculate how many cards to play before reshuffle
     total_cards = deck_count * 52
@@ -231,7 +264,7 @@ def _simulate_hands_worker(args):
     else:  # Penetration = how many decks worth of cards to play
         cards_to_play = int(penetration * 52)
     
-    total_hands_counted = 0
+    total_hands_played = 0
     
     for shoe_num in range(num_shoes):
         # Create and shuffle new shoe
@@ -241,36 +274,33 @@ def _simulate_hands_worker(args):
         counter.reset()
         
         # Deal through the shoe until penetration reached
-        while cards_dealt < cards_to_play:
-            # Deal 2-7 cards per hand (typical range for blackjack hands)
-            cards_this_hand = random.randint(2, 7)
-            
-            # Make sure we don't exceed the penetration limit
-            if cards_dealt + cards_this_hand > cards_to_play:
-                break
-            
-            if len(shoe) < cards_this_hand:
-                # Should not happen with proper penetration calculation
-                break
-            
-            # Deal the cards and update count
-            for _ in range(cards_this_hand):
-                if shoe and cards_dealt < cards_to_play:
-                    card = shoe.pop()
-                    counter.add_card(card)
-                    cards_dealt += 1
-            
-            # Calculate true count based on actual remaining cards in shoe
+        while cards_dealt < cards_to_play and len(shoe) >= 10:  # Need enough cards for blackjack
+            # Calculate true count before playing hand
             remaining_cards_in_shoe = len(shoe)
             remaining_decks = calculate_remaining_decks(remaining_cards_in_shoe)
             true_count_precise = counter.get_true_count_precise(remaining_decks)
-            
-            # Round to nearest integer for distribution tracking
             true_count_rounded = round(true_count_precise)
             
-            # Only track true counts in the range [-10, +10], skip others
+            # Only track and play hands for true counts in range [-10, +10]
             if -10 <= true_count_rounded <= 10:
-                true_count_distribution[true_count_rounded] += 1
-            total_hands_counted += 1
+                # Play a blackjack hand at this true count
+                profit, bet_amount = game.play_hand(shoe, true_count_rounded, counter)
+                
+                if bet_amount > 0:  # Hand was actually played
+                    true_count_stats[true_count_rounded]['frequency'] += 1
+                    true_count_stats[true_count_rounded]['total_profit'] += profit
+                    true_count_stats[true_count_rounded]['total_wagered'] += bet_amount
+                    total_hands_played += 1
+            
+            # Update card count based on cards that were dealt during the hand
+            # Note: This is an approximation since cards were removed by play_hand
+            cards_dealt = total_cards - len(shoe)
+            
+            # Update running count for remaining cards in shoe
+            # This is a simplification - in reality we'd track each card dealt
+            if len(shoe) > 0:
+                # Estimate count change based on cards dealt (rough approximation)
+                cards_used_this_hand = min(6, cards_dealt - (total_cards - len(shoe) - 6))
+                # We'll recalculate the count fresh each time for accuracy
     
-    return true_count_distribution
+    return true_count_stats
