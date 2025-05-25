@@ -175,6 +175,12 @@ class BlackjackGame:
         # Check bet amount based on true count
         bet_amount = self.get_bet_amount(true_count)
         if bet_amount == 0:
+            # Sit out but still burn some cards to advance the count
+            cards_to_burn = min(4, len(shoe))
+            for _ in range(cards_to_burn):
+                if shoe:
+                    card = shoe.pop()
+                    counter.add_card(card)
             return 0, 0  # Sit out this hand
         
         # Deal initial cards and update count
