@@ -14,15 +14,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Custom Bet Spread Simulation"
+args = "Fixed Risk Calculator"
 
 [[workflows.workflow]]
-name = "Custom Bet Spread Simulation"
+name = "Fixed Risk Calculator"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python simple_web.py"
+args = "python fixed_web.py"
 waitForPort = 5000
 
 [deployment]
