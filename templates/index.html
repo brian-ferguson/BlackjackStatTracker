@@ -140,26 +140,49 @@
                             </div>
                         </div>
 
-                        <!-- Hands per Configuration -->
+                        <!-- Number of Shoes -->
                         <div class="mb-3">
-                            <label for="hands-per-config" class="form-label">Hands per Configuration</label>
-                            <select class="form-select" id="hands-per-config">
-                                <option value="10000">10,000 (Quick Test)</option>
+                            <label for="num-shoes" class="form-label">Number of Shoes per Configuration</label>
+                            <select class="form-select" id="num-shoes">
+                                <option value="1000">1,000 (Quick Test)</option>
+                                <option value="10000">10,000 (Medium Test)</option>
                                 <option value="100000" selected>100,000 (Default)</option>
                                 <option value="1000000">1,000,000 (Full Study)</option>
                             </select>
                         </div>
 
-                        <!-- Number of Processes -->
+                        <!-- Bet Spread Configuration -->
                         <div class="mb-3">
-                            <label for="num-processes" class="form-label">Parallel Processes</label>
-                            <select class="form-select" id="num-processes">
-                                <option value="">Auto (Recommended)</option>
-                                <option value="1">1 Process</option>
-                                <option value="2">2 Processes</option>
-                                <option value="4">4 Processes</option>
-                                <option value="8">8 Processes</option>
-                            </select>
+                            <label class="form-label">Bet Spread Strategy</label>
+                            <div class="row">
+                                <div class="col-12">
+                                    <small class="text-muted mb-2 d-block">Set bet amounts for each True Count (TC). Use $0 to sit out.</small>
+                                </div>
+                                <div class="col-4">
+                                    <label for="bet-tc-neg" class="form-label">TC ≤ 0</label>
+                                    <input type="number" class="form-control" id="bet-tc-neg" value="0" min="0" step="5">
+                                </div>
+                                <div class="col-4">
+                                    <label for="bet-tc-1" class="form-label">TC +1</label>
+                                    <input type="number" class="form-control" id="bet-tc-1" value="5" min="0" step="5">
+                                </div>
+                                <div class="col-4">
+                                    <label for="bet-tc-2" class="form-label">TC +2</label>
+                                    <input type="number" class="form-control" id="bet-tc-2" value="10" min="0" step="5">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label for="bet-tc-3" class="form-label">TC +3</label>
+                                    <input type="number" class="form-control" id="bet-tc-3" value="15" min="0" step="5">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label for="bet-tc-4" class="form-label">TC +4</label>
+                                    <input type="number" class="form-control" id="bet-tc-4" value="25" min="0" step="5">
+                                </div>
+                                <div class="col-4 mt-2">
+                                    <label for="bet-tc-5plus" class="form-label">TC +5+</label>
+                                    <input type="number" class="form-control" id="bet-tc-5plus" value="25" min="0" step="5">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Control Buttons -->

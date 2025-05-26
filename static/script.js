@@ -97,6 +97,21 @@ class SimulationController {
         return Array.from(checkboxes).map(cb => parseFloat(cb.value));
     }
 
+    getBetSpread() {
+        return {
+            tc_neg: parseInt(document.getElementById('bet-tc-neg').value) || 0,
+            tc_1: parseInt(document.getElementById('bet-tc-1').value) || 0,
+            tc_2: parseInt(document.getElementById('bet-tc-2').value) || 0,
+            tc_3: parseInt(document.getElementById('bet-tc-3').value) || 0,
+            tc_4: parseInt(document.getElementById('bet-tc-4').value) || 0,
+            tc_5plus: parseInt(document.getElementById('bet-tc-5plus').value) || 0
+        };
+    }
+
+    getNumShoes() {
+        return parseInt(document.getElementById('num-shoes').value) || 100000;
+    }
+
     validateConfiguration() {
         const deckCounts = this.getSelectedDeckCounts();
         const penetrations = this.getSelectedPenetrations();
@@ -138,16 +153,12 @@ class SimulationController {
         }
 
         // Prepare simulation parameters
-        const deckCounts = this.getSelectedDeckCounts();
-        const penetrations = this.getSelectedPenetrations();
-        const handsPerConfig = parseInt(document.getElementById('hands-per-config').value);
-        const numProcesses = document.getElementById('num-processes').value || null;
+        const betSpread = this.getBetSpread();
+        const numShoes = this.getNumShoes();
 
         const params = {
-            deck_counts: deckCounts,
-            penetrations: penetrations,
-            hands_per_config: handsPerConfig,
-            num_processes: numProcesses ? parseInt(numProcesses) : null
+            bet_spread: betSpread,
+            num_shoes: numShoes
         };
 
         try {

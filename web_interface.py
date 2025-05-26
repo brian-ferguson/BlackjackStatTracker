@@ -39,7 +39,7 @@ def create_web_app():
     
     @app.route('/api/start_simulation', methods=['POST'])
     def start_simulation():
-        """Start a new simulation"""
+        """Start a new fast simulation with custom bet spread"""
         global simulation_status
         
         if simulation_status['running']:
@@ -47,10 +47,11 @@ def create_web_app():
         
         try:
             data = request.json
-            deck_counts = data.get('deck_counts', [1, 2, 3, 4, 6, 8])
-            penetrations = data.get('penetrations', [5.5, 5.25, 5.0, 4.75, 4.5, 4.25, 4.0, 3.75, 3.5])
-            hands_per_config = data.get('hands_per_config', 100000)  # Reduced default for web
-            num_processes = data.get('num_processes', None)
+            bet_spread = data.get('bet_spread', {
+                'tc_neg': 0, 'tc_1': 5, 'tc_2': 10, 
+                'tc_3': 15, 'tc_4': 25, 'tc_5plus': 25
+            })
+            num_shoes = data.get('num_shoes', 100000)
             
             # Validate parameters
             errors, valid_combinations = validate_simulation_parameters(deck_counts, penetrations)
