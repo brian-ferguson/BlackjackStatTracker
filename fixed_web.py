@@ -651,6 +651,51 @@ def parse_bet_spread_from_string(bet_spread_input):
             
     return bet_spread
 
+def parse_csv_content(csv_content):
+    """Parse CSV content string and extract true count data"""
+    tc_frequencies = {}
+    tc_edges = {}
+    
+    try:
+        lines = csv_content.strip().split('\n')
+        if len(lines) < 2:
+            return None, None
+            
+        # Parse header to find column indices
+        header = lines[0].split(',')
+        tc_index = next((i for i, col in enumerate(header) if 'True Count' in col), None)
+        freq_index = next((i for i, col in enumerate(header) if 'Frequency' in col), None)
+        edge_index = next((i for i, col in enumerate(header) if 'Edge' in col), None)
+        
+        if tc_index is None or freq_index is None or edge_index is None:
+            return None, None
+        
+        total_frequency = 0
+        
+        # Parse data rows
+        for line in lines[1:]:
+            if line.strip():
+                parts = line.split(',')
+                if len(parts) > max(tc_index, freq_index, edge_index):
+                    tc = int(float(parts[tc_index]))
+                    frequency = float(parts[freq_index])
+                    edge = float(parts[edge_index])
+                    
+                    tc_frequencies[tc] = frequency
+                    tc_edges[tc] = edge
+                    total_frequency += frequency
+        
+        # Normalize frequencies to sum to 1.0
+        if total_frequency > 0:
+            for tc in tc_frequencies:
+                tc_frequencies[tc] /= total_frequency
+                
+        return tc_frequencies, tc_edges
+        
+    except Exception as e:
+        print(f"Error parsing CSV content: {e}")
+        return None, None
+
 def read_csv_data(csv_file_path):
     """Read simulation data from CSV file"""
     tc_frequencies = {}
