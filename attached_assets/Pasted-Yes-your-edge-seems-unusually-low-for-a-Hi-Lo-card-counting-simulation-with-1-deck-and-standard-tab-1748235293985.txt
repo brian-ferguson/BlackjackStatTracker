@@ -1,0 +1,89 @@
+Yes, your edge seems unusually low for a Hi-Lo card counting simulation with 1 deck and standard table rules. Let’s break down a few important observations and possible reasons:
+
+📊 Your Reported Edge by True Count
+Let’s examine a few points:
+
+TC 1: -0.006584 → Losing money at TC1
+
+TC 2: -0.000638 → Still losing at TC2
+
+TC 3: +0.002541 → Barely positive
+
+TC 4–10: Ranges from +0.0085 to +0.0276
+
+These values are well below what is typically expected in Hi-Lo simulations. For comparison, here's what's typical using the Hi-Lo count on a single-deck game under decent rules:
+
+TC	Typical Player Edge (approx)
+0	~0% (break-even)
++1	~0.5%
++2	~1.0%
++3	~1.5%
++4	~2.0%
++5	~2.5%
++6	~3.0%
+
+You’re seeing numbers between ~0.01% to ~2.7%, and even negative EV at positive counts.
+
+🔍 Possible Explanations
+Incorrect Simulation Assumptions
+Your Penetration: nopenetration is suspect — are you reshuffling every round or too early? Without meaningful penetration, you eliminate the advantage of the count accumulating. Most advantage play comes from deep penetration (e.g., 60–80%).
+
+Wrong Rules or Strategy Implementation
+If the rules in the simulation are unfavorable (e.g., no double after split, no resplit aces, 6:5 blackjack payouts, dealer hits soft 17), the edge drops sharply. Ensure:
+
+Blackjack pays 3:2
+
+Dealer stands on soft 17
+
+Double allowed on any two cards
+
+DAS and RSA enabled
+
+Counting/Bets Not Applied Correctly
+You list $0 bet at TC ≤ 0 — but this may be interpreted as not playing at all in those cases, which could skew results. Also, the flat top bet of $25 above TC4 might be too conservative to capture the value of TC 5–10.
+
+Shoe vs Single Deck Confusion
+If you meant to simulate 1 deck but your sim is behaving like a shoe (e.g., infinite deck/no penetration), this will break Hi-Lo's effectiveness. The Hi-Lo system assumes finite deck effects — a “no-penetration” model makes counting pointless.
+
+✅ Recommendations
+Double-check penetration: Realistically, no penetration = no edge.
+
+Review rules used: Even one bad rule can kill your edge.
+
+Fix the bet spread: $0 at TC≤0 may be treated as "not playing" or creates strange weighting. Consider a minimal bet like $1 to ensure continuity.
+
+Verify simulation logic: Are you using the Hi-Lo count correctly and adjusting bets based on actual TC?
+
+🔧 Sanity Check Formula
+To roughly compute your overall edge:
+
+Overall Edge
+=
+∑
+(
+Profit at TC
+)
+∑
+(
+Total Wagered at TC
+)
+Overall Edge= 
+∑(Total Wagered at TC)
+∑(Profit at TC)
+​
+ 
+From your data:
+
+Total Profit ≈ $398,959
+
+Total Wagered ≈ $48,395,640
+→ Edge ≈ 398,959 / 48,395,640 ≈ 0.824%
+
+✅ That’s actually a decent overall edge! The issue is not the total profit — it's how flat your edges look across true counts, which may be:
+
+A display issue (smoothing/rounding)
+
+Or a symptom of poor simulation rules
+
+📌 Final Take
+No, your edge is not necessarily too low when looking at the total win rate (~0.82%). But your per-TC edge estimates seem suspect and worth investigating. The big question is why early counts (1–2) are negative and 3+ are so weak.
