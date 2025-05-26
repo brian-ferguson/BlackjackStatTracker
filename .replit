@@ -14,10 +14,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Fixed Risk Calculator"
+args = "Blackjack Risk Calculator"
 
 [[workflows.workflow]]
-name = "Fixed Risk Calculator"
+name = "Blackjack Risk Calculator"
 author = "agent"
 
 [[workflows.workflow.tasks]]
