@@ -7,7 +7,10 @@ from flask import Flask, render_template, request, jsonify
 import threading
 import time
 import os
+import csv
+import math
 from custom_simulation import run_custom_simulation
+from risk_calculator import RiskOfRuinCalculator, format_ror_results
 
 app = Flask(__name__)
 
@@ -572,6 +575,114 @@ def run_simulation_thread(bet_spread, table_rules, num_shoes):
         simulation_status['running'] = False
         simulation_status['error'] = str(e)
         simulation_status['message'] = f'Simulation failed: {str(e)}'
+
+@app.route('/calculate_risk', methods=['POST'])
+def calculate_risk():
+    """Calculate Risk of Ruin using actual simulation data"""
+    try:
+        data = request.json
+        csv_content = data.get('csv_content', '')
+        bankroll = float(data.get('bankroll', 1000))
+        bet_spread_input = data.get('bet_spread', {})
+        
+        # Parse bet spread from form data
+        bet_spread = parse_bet_spread_from_string(bet_spread_input)
+        
+        # Parse CSV content and extract data
+        tc_frequencies, tc_edges = parse_csv_content(csv_content)
+        
+        if not tc_frequencies or not tc_edges:
+            return jsonify({'error': 'Could not parse simulation data from CSV content'})
+        
+        # Calculate Risk of Ruin
+        calculator = RiskOfRuinCalculator()
+        results = calculator.calculate_ror(
+            tc_frequencies=tc_frequencies,
+            tc_edges=tc_edges,
+            tc_bet_sizes=bet_spread,
+            bankroll=bankroll
+        )
+        
+        # Format results for web display
+        formatted_results = {
+            'ror_percentage': results['risk_of_ruin_exponential'] * 100,
+            'ror_normal_percentage': results['risk_of_ruin_normal_approx'] * 100,
+            'expected_value_per_hand': results['expected_value_per_hand'],
+            'expected_value_per_100_hands': results['expected_value_per_hand'] * 100,
+            'standard_deviation': results['standard_deviation_per_hand'],
+            'variance': results['variance_per_hand'],
+            'kelly_fraction': results['kelly_fraction'],
+            'average_bet_size': results['average_bet_size'],
+            'is_positive_ev': results['is_positive_ev'],
+            'bankroll': bankroll,
+            'formatted_output': format_ror_results(results)
+        }
+        
+        return jsonify({'success': True, 'results': formatted_results})
+        
+    except Exception as e:
+        return jsonify({'error': f'Error calculating Risk of Ruin: {str(e)}'})
+
+def parse_bet_spread_from_string(bet_spread_input):
+    """Parse bet spread from the web form into dictionary"""
+    bet_spread = {}
+    
+    # Get bet spread from form data
+    tc0_bet = float(bet_spread_input.get('tc0', 0))
+    tc1_bet = float(bet_spread_input.get('tc1', 5))
+    tc2_bet = float(bet_spread_input.get('tc2', 10))
+    tc3_bet = float(bet_spread_input.get('tc3', 15))
+    tc4_bet = float(bet_spread_input.get('tc4', 25))
+    tc5plus_bet = float(bet_spread_input.get('tc5plus', 25))
+    
+    # Map to true count values
+    bet_spread = {
+        -5: 0, -4: 0, -3: 0, -2: 0, -1: 0,  # Sit out negative counts
+        0: tc0_bet,
+        1: tc1_bet,
+        2: tc2_bet,
+        3: tc3_bet,
+        4: tc4_bet
+    }
+    
+    # Apply TC5+ bet to all counts 5 and above
+    for tc in range(5, 11):
+        bet_spread[tc] = tc5plus_bet
+            
+    return bet_spread
+
+def read_csv_data(csv_file_path):
+    """Read simulation data from CSV file"""
+    tc_frequencies = {}
+    tc_edges = {}
+    
+    try:
+        if not os.path.exists(csv_file_path):
+            return None, None
+            
+        with open(csv_file_path, 'r') as file:
+            reader = csv.DictReader(file)
+            total_frequency = 0
+            
+            for row in reader:
+                tc = int(float(row['True Count']))
+                frequency = float(row['Frequency'])
+                edge = float(row['Edge'])
+                
+                tc_frequencies[tc] = frequency
+                tc_edges[tc] = edge
+                total_frequency += frequency
+        
+        # Normalize frequencies to sum to 1.0
+        if total_frequency > 0:
+            for tc in tc_frequencies:
+                tc_frequencies[tc] /= total_frequency
+                
+        return tc_frequencies, tc_edges
+        
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return None, None
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
