@@ -106,7 +106,7 @@ def simulate_configuration_custom(deck_count, penetration, num_shoes, bet_spread
             
             # Play hand
             cards_before = len(shoe)
-            profit, bet = game.play_hand(shoe, true_count, counter)
+            profit, bet = game.play_hand(shoe, true_count, counter, bet_spread)
             cards_after = len(shoe)
             cards_dealt += (cards_before - cards_after)
             
@@ -176,8 +176,8 @@ def save_results_custom(deck_count, penetration, num_shoes, true_count_stats, to
             else:
                 writer.writerow([tc, 0, "0.000000", "0.000000", "0.00", "0.00"])
 
-def run_custom_simulation(bet_spread, num_shoes, progress_callback=None):
-    """Run custom simulation with specified bet spread"""
+def run_custom_simulation(bet_spread, num_shoes, table_rules=None, progress_callback=None):
+    """Run custom simulation with specified bet spread and table rules"""
     configurations = generate_configurations()
     total_configs = len(configurations)
     
@@ -207,7 +207,7 @@ def run_custom_simulation(bet_spread, num_shoes, progress_callback=None):
             print(f"    Progress: {progress:.1f}% ({int(progress * num_shoes / 100)}/{num_shoes:,})")
         
         stats, total_hands = simulate_configuration_custom(
-            deck_count, penetration, num_shoes, bet_spread, config_progress
+            deck_count, penetration, num_shoes, bet_spread, table_rules, config_progress
         )
         
         config_time = time.time() - config_start

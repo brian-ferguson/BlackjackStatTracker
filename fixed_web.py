@@ -537,7 +537,7 @@ def get_status():
     """Get simulation status"""
     return jsonify(simulation_status)
 
-def run_simulation_thread(bet_spread, num_shoes):
+def run_simulation_thread(bet_spread, table_rules, num_shoes):
     """Run simulation in background thread"""
     global simulation_status
     
@@ -548,7 +548,7 @@ def run_simulation_thread(bet_spread, num_shoes):
             simulation_status['current_config'] = config_name
             simulation_status['message'] = f'Processing configuration {completed}/{total}: {config_name}'
         
-        folder_name = run_custom_simulation(bet_spread, num_shoes, progress_callback)
+        folder_name = run_custom_simulation(bet_spread, num_shoes, table_rules, progress_callback)
         
         simulation_status['running'] = False
         simulation_status['folder_name'] = folder_name
