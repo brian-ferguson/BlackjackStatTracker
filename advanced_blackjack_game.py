@@ -16,11 +16,11 @@ class AdvancedBlackjackGame:
         
         # Default table rules (favorable to player)
         self.rules = {
-            'dealer_hits_soft17': True,
+            'dealer_hits_soft17': False,  # Dealer stands on soft 17 (player favorable)
             'double_after_split': True,
             'split_aces': True,
             'resplit_aces': False,
-            'surrender_allowed': False,
+            'surrender_allowed': True,   # Allow surrender (player favorable)
             'max_splits': 3,
             'blackjack_pays': 1.5  # 3:2 payout
         }
