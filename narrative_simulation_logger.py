@@ -26,17 +26,12 @@ def play_narrative_hand(game, shoe, true_count, running_count, remaining_decks, 
     print(f"💰 Bet Decision: TC {true_count:.2f} → ${bet_amount}")
     
     if bet_amount == 0:
-        print("🚫 SITTING OUT (True Count ≤ 0)")
-        # Burn cards to advance count
+        # Quick sit-out without details to focus on played hands
         cards_to_burn = min(4, len(shoe))
-        burned_cards = []
         for i in range(cards_to_burn):
             if shoe:
                 card = shoe.pop()
                 counter.add_card(card)
-                burned_cards.append(card)
-                print(f"   🔥 Burned card {i+1}: {card}")
-        print(f"   New Running Count: {counter.get_running_count()}")
         return 0, 0
     
     print(f"🎯 PLAYING HAND - Betting ${bet_amount}")
