@@ -118,10 +118,73 @@ def index():
                 <p>Your simulation results have been saved to folder: <strong id="folder-name"></strong></p>
                 <p>This folder contains all 54 CSV files with your custom bet spread analysis.</p>
             </div>
+
+            <hr style="margin: 40px 0;">
+
+            <!-- Risk of Ruin Calculator -->
+            <h2>📈 Risk of Ruin Calculator</h2>
+            <p>Load your simulation results and calculate bankroll requirements:</p>
+
+            <div class="form-group">
+                <label>Load Simulation Results:</label>
+                <input type="file" id="csv-file" accept=".csv" onchange="loadCSVFile()">
+                <small style="display: block; color: #666; margin-top: 5px;">
+                    Select one of your CSV files from the simulation results folder
+                </small>
+            </div>
+
+            <div id="bankroll-calculator" style="display:none;">
+                <div class="form-group">
+                    <label>Starting Bankroll ($):</label>
+                    <input type="number" id="bankroll" value="10000" min="1000" step="1000">
+                </div>
+
+                <div class="form-group">
+                    <label>Hands per Hour:</label>
+                    <input type="number" id="hands-per-hour" value="100" min="50" max="200" step="10">
+                    <small style="display: block; color: #666;">Typical range: 50-200 hands/hour</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Risk of Ruin Threshold (%):</label>
+                    <input type="number" id="ror-threshold" value="5" min="1" max="50" step="1">
+                    <small style="display: block; color: #666;">Percentage of bankroll loss that defines "ruin"</small>
+                </div>
+
+                <button onclick="calculateRiskMetrics()">🧮 Calculate Risk Metrics</button>
+
+                <div id="risk-results" style="display:none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+                    <h3>📊 Risk Analysis Results</h3>
+                    <div class="risk-metrics" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                        <div>
+                            <strong>Expected Hourly EV:</strong>
+                            <div id="hourly-ev" style="font-size: 24px; color: #28a745;">$0.00</div>
+                        </div>
+                        <div>
+                            <strong>Standard Deviation:</strong>
+                            <div id="std-dev" style="font-size: 24px; color: #007bff;">$0.00</div>
+                        </div>
+                        <div>
+                            <strong>N0 (Breakeven Hands):</strong>
+                            <div id="n0-hands" style="font-size: 24px; color: #6f42c1;">0</div>
+                        </div>
+                        <div>
+                            <strong>Risk of Ruin:</strong>
+                            <div id="risk-of-ruin" style="font-size: 24px; color: #dc3545;">0.00%</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4>📋 Detailed Breakdown</h4>
+                        <div id="detailed-breakdown"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script>
             let statusInterval;
+            let simulationData = null;
 
             function getBetSpread() {
                 return {
@@ -215,6 +278,184 @@ def index():
                 const statusDiv = document.getElementById('status');
                 statusDiv.textContent = message;
                 statusDiv.className = 'status ' + type;
+            }
+
+            // Risk of Ruin Calculator Functions
+            function loadCSVFile() {
+                const fileInput = document.getElementById('csv-file');
+                const file = fileInput.files[0];
+                
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const csvText = e.target.result;
+                    simulationData = parseCSVData(csvText);
+                    
+                    if (simulationData) {
+                        document.getElementById('bankroll-calculator').style.display = 'block';
+                        updateStatusDiv('CSV loaded successfully! Enter your parameters below.', 'success');
+                    } else {
+                        updateStatusDiv('Error parsing CSV file. Please check the format.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            function parseCSVData(csvText) {
+                try {
+                    const lines = csvText.split('\n');
+                    const data = {
+                        deckCount: null,
+                        penetration: null,
+                        totalShoes: null,
+                        totalHands: null,
+                        betSpread: null,
+                        trueCountData: []
+                    };
+
+                    // Parse header information
+                    for (let line of lines) {
+                        if (line.includes('Deck Count:')) {
+                            data.deckCount = parseInt(line.split(':')[1].trim());
+                        } else if (line.includes('Penetration:')) {
+                            data.penetration = line.split(':')[1].trim();
+                        } else if (line.includes('Total Shoes:')) {
+                            data.totalShoes = parseInt(line.split(':')[1].replace(/[",]/g, '').trim());
+                        } else if (line.includes('Total Hands:')) {
+                            data.totalHands = parseInt(line.split(':')[1].replace(/[",]/g, '').trim());
+                        } else if (line.includes('Bet Spread:')) {
+                            data.betSpread = line.split(':')[1].trim();
+                        }
+                    }
+
+                    // Parse true count data
+                    let dataStarted = false;
+                    for (let line of lines) {
+                        if (line.startsWith('True Count,')) {
+                            dataStarted = true;
+                            continue;
+                        }
+                        
+                        if (dataStarted && line.trim()) {
+                            const parts = line.split(',');
+                            if (parts.length >= 6) {
+                                const tc = parseInt(parts[0]);
+                                const frequency = parseInt(parts[1]);
+                                const percentage = parseFloat(parts[2]);
+                                const edge = parseFloat(parts[3]);
+                                const profit = parseFloat(parts[4]);
+                                const wagered = parseFloat(parts[5]);
+                                
+                                if (frequency > 0) {
+                                    data.trueCountData.push({
+                                        trueCount: tc,
+                                        frequency: frequency,
+                                        percentage: percentage,
+                                        edge: edge,
+                                        totalProfit: profit,
+                                        totalWagered: wagered
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('Error parsing CSV:', error);
+                    return null;
+                }
+            }
+
+            function calculateRiskMetrics() {
+                if (!simulationData) {
+                    updateStatusDiv('Please load a CSV file first', 'error');
+                    return;
+                }
+
+                const bankroll = parseFloat(document.getElementById('bankroll').value);
+                const handsPerHour = parseInt(document.getElementById('hands-per-hour').value);
+                const rorThreshold = parseFloat(document.getElementById('ror-threshold').value);
+
+                // Calculate overall statistics
+                let totalProfit = 0;
+                let totalWagered = 0;
+                let totalHands = 0;
+                let weightedVariance = 0;
+
+                for (let tcData of simulationData.trueCountData) {
+                    totalProfit += tcData.totalProfit;
+                    totalWagered += tcData.totalWagered;
+                    totalHands += tcData.frequency;
+                    
+                    // Calculate variance for this true count
+                    const avgBet = tcData.totalWagered / tcData.frequency;
+                    const avgProfit = tcData.totalProfit / tcData.frequency;
+                    const variance = avgBet * avgBet * (1 - tcData.edge * tcData.edge);
+                    weightedVariance += variance * tcData.frequency;
+                }
+
+                // Calculate key metrics
+                const overallEdge = totalProfit / totalWagered;
+                const avgBetPerHand = totalWagered / totalHands;
+                const hourlyEV = overallEdge * avgBetPerHand * handsPerHour;
+                const variance = weightedVariance / totalHands;
+                const stdDev = Math.sqrt(variance);
+                const hourlyStdDev = stdDev * Math.sqrt(handsPerHour);
+                
+                // N0 calculation (hands to break even with 50% probability)
+                const n0 = Math.pow(stdDev / (overallEdge * avgBetPerHand), 2);
+                
+                // Simplified Risk of Ruin using normal approximation
+                const ruinPoint = bankroll * (rorThreshold / 100);
+                const handsToRuin = ruinPoint / (overallEdge * avgBetPerHand);
+                const zScore = Math.sqrt(handsToRuin) * (overallEdge * avgBetPerHand) / stdDev;
+                const riskOfRuin = Math.max(0, Math.min(100, (1 - normalCDF(zScore)) * 100));
+
+                // Display results
+                document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
+                document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
+                document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
+                document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
+
+                // Detailed breakdown
+                const breakdown = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr><td><strong>Overall Edge:</strong></td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
+                        <tr><td><strong>Average Bet:</strong></td><td>$${avgBetPerHand.toFixed(2)}</td></tr>
+                        <tr><td><strong>Total Hands Simulated:</strong></td><td>${totalHands.toLocaleString()}</td></tr>
+                        <tr><td><strong>Deck Configuration:</strong></td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
+                        <tr><td><strong>Betting Strategy:</strong></td><td>${simulationData.betSpread}</td></tr>
+                        <tr><td><strong>Bankroll:</strong></td><td>$${bankroll.toLocaleString()}</td></tr>
+                        <tr><td><strong>Hands per Hour:</strong></td><td>${handsPerHour}</td></tr>
+                    </table>
+                `;
+                
+                document.getElementById('detailed-breakdown').innerHTML = breakdown;
+                document.getElementById('risk-results').style.display = 'block';
+            }
+
+            // Normal CDF approximation for risk calculation
+            function normalCDF(z) {
+                return 0.5 * (1 + erf(z / Math.sqrt(2)));
+            }
+
+            function erf(x) {
+                const a1 =  0.254829592;
+                const a2 = -0.284496736;
+                const a3 =  1.421413741;
+                const a4 = -1.453152027;
+                const a5 =  1.061405429;
+                const p  =  0.3275911;
+
+                const sign = x < 0 ? -1 : 1;
+                x = Math.abs(x);
+
+                const t = 1.0 / (1.0 + p * x);
+                const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+                return sign * y;
             }
         </script>
     </body>
