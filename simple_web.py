@@ -426,7 +426,7 @@ def index():
                         <tr><td><strong>Average Bet:</strong></td><td>$${avgBetPerHand.toFixed(2)}</td></tr>
                         <tr><td><strong>Total Hands Simulated:</strong></td><td>${totalHands.toLocaleString()}</td></tr>
                         <tr><td><strong>Deck Configuration:</strong></td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
-                        <tr><td><strong>Betting Strategy:</strong></td><td>${simulationData.betSpread}</td></tr>
+                        <tr><td><strong>Betting Strategy:</strong></td><td>${simulationData.betSpread || 'N/A'}</td></tr>
                         <tr><td><strong>Bankroll:</strong></td><td>$${bankroll.toLocaleString()}</td></tr>
                         <tr><td><strong>Hands per Hour:</strong></td><td>${handsPerHour}</td></tr>
                     </table>
