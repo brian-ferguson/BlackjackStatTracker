@@ -111,6 +111,41 @@ def index():
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Table Rules:</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 10px 0;">
+                        <div>
+                            <input type="checkbox" id="dealer-hits-soft17" checked>
+                            <label for="dealer-hits-soft17">Dealer Hits Soft 17</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="double-after-split" checked>
+                            <label for="double-after-split">Double After Split</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="split-aces" checked>
+                            <label for="split-aces">Split Aces Allowed</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="resplit-aces">
+                            <label for="resplit-aces">Re-split Aces</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="surrender-allowed">
+                            <label for="surrender-allowed">Surrender Allowed</label>
+                        </div>
+                        <div>
+                            <label for="max-splits">Max Splits:</label>
+                            <select id="max-splits">
+                                <option value="1">1 (2 hands)</option>
+                                <option value="2">2 (3 hands)</option>
+                                <option value="3" selected>3 (4 hands)</option>
+                                <option value="4">4 (5 hands)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="start-btn" onclick="startSimulation()">🚀 Start Simulation</button>
                 <button id="stop-btn" onclick="stopSimulation()" style="display:none;">⏹️ Stop Simulation</button>
 
@@ -209,12 +244,25 @@ def index():
                 };
             }
 
+            function getTableRules() {
+                return {
+                    dealer_hits_soft17: document.getElementById('dealer-hits-soft17').checked,
+                    double_after_split: document.getElementById('double-after-split').checked,
+                    split_aces: document.getElementById('split-aces').checked,
+                    resplit_aces: document.getElementById('resplit-aces').checked,
+                    surrender_allowed: document.getElementById('surrender-allowed').checked,
+                    max_splits: parseInt(document.getElementById('max-splits').value)
+                };
+            }
+
             async function startSimulation() {
                 const betSpread = getBetSpread();
+                const tableRules = getTableRules();
                 const numShoes = parseInt(document.getElementById('num-shoes').value);
 
                 const params = {
                     bet_spread: betSpread,
+                    table_rules: tableRules,
                     num_shoes: numShoes
                 };
 
@@ -453,6 +501,7 @@ def start_simulation():
     
     data = request.json
     bet_spread = data.get('bet_spread', {})
+    table_rules = data.get('table_rules', {})
     num_shoes = data.get('num_shoes', 100000)
     
     # Reset status
@@ -470,7 +519,7 @@ def start_simulation():
     # Start simulation thread
     simulation_thread = threading.Thread(
         target=run_simulation_thread,
-        args=(bet_spread, num_shoes)
+        args=(bet_spread, table_rules, num_shoes)
     )
     simulation_thread.start()
     

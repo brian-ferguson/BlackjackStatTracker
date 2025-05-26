@@ -7,7 +7,7 @@ import csv
 import os
 import time
 from datetime import datetime
-from blackjack_game import BlackjackGame
+from advanced_blackjack_game import AdvancedBlackjackGame
 from card_counting import HighLowCounter
 from utils import create_deck, calculate_remaining_decks, format_percentage
 import random
@@ -70,31 +70,9 @@ def create_bet_spread_folder(bet_spread, num_shoes):
     
     return folder_name
 
-def simulate_configuration_custom(deck_count, penetration, num_shoes, bet_spread, progress_callback=None):
-    """Simulate one configuration with custom bet spread"""
-    game = BlackjackGame()
-    
-    # Update bet spread in game
-    game.base_bet = 5  # Base bet amount
-    game.bet_spread = bet_spread
-    
-    # Override get_bet_amount method with custom spread
-    def custom_get_bet_amount(true_count):
-        tc = round(true_count)
-        if tc <= 0:
-            return bet_spread['tc_neg']
-        elif tc == 1:
-            return bet_spread['tc_1']
-        elif tc == 2:
-            return bet_spread['tc_2']
-        elif tc == 3:
-            return bet_spread['tc_3']
-        elif tc == 4:
-            return bet_spread['tc_4']
-        else:  # tc >= 5
-            return bet_spread['tc_5plus']
-    
-    game.get_bet_amount = custom_get_bet_amount
+def simulate_configuration_custom(deck_count, penetration, num_shoes, bet_spread, table_rules=None, progress_callback=None):
+    """Simulate one configuration with custom bet spread and table rules"""
+    game = AdvancedBlackjackGame(table_rules)
     
     # Statistics tracking
     true_count_stats = {}
