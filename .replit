@@ -14,15 +14,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Blackjack Simulation Server"
+args = "Custom Bet Spread Simulation"
 
 [[workflows.workflow]]
-name = "Blackjack Simulation Server"
+name = "Custom Bet Spread Simulation"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pip install flask numpy pandas matplotlib && python main.py --mode web"
+args = "python simple_web.py"
 waitForPort = 5000
 
 [deployment]
