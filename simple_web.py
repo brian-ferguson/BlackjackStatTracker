@@ -127,7 +127,7 @@ def index():
 
             <div class="form-group">
                 <label>Load Simulation Results:</label>
-                <input type="file" id="csv-file" accept=".csv" onchange="loadCSVFile()">
+                <input type="file" id="csv-file" accept=".csv">
                 <small style="display: block; color: #666; margin-top: 5px;">
                     Select one of your CSV files from the simulation results folder
                 </small>
@@ -301,6 +301,11 @@ def index():
                 };
                 reader.readAsText(file);
             }
+
+            // Add event listener when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('csv-file').addEventListener('change', loadCSVFile);
+            });
 
             function parseCSVData(csvText) {
                 try {
