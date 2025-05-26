@@ -146,8 +146,8 @@ def index():
                     </div>
                 </div>
 
-                <button id="start-btn" onclick="startSimulation()">🚀 Start Simulation</button>
-                <button id="stop-btn" onclick="stopSimulation()" style="display:none;">⏹️ Stop Simulation</button>
+                <button id="start-btn">🚀 Start Simulation</button>
+                <button id="stop-btn" style="display:none;">⏹️ Stop Simulation</button>
 
                 <div id="status" class="status info">
                     Ready to start simulation. Configure your bet spread and click Start!
@@ -196,7 +196,7 @@ def index():
                         <small style="display: block; color: #666;">Percentage of bankroll loss that defines "ruin"</small>
                     </div>
 
-                    <button onclick="calculateRisk()">🧮 Calculate Risk Metrics</button>
+                    <button id="calc-risk-btn">🧮 Calculate Risk Metrics</button>
 
                     <div id="risk-results" style="display:none;">
                         <h3>📊 Risk Analysis Results</h3>
@@ -486,6 +486,20 @@ def index():
                 
                 document.getElementById('risk-results').style.display = 'block';
             }
+
+            // Add event listeners when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('start-btn').addEventListener('click', startSimulation);
+                document.getElementById('stop-btn').addEventListener('click', stopSimulation);
+                document.getElementById('calc-risk-btn').addEventListener('click', calculateRisk);
+                
+                // Find and add event listener for load button
+                const loadBtn = document.querySelector('button[onclick="loadFile()"]');
+                if (loadBtn) {
+                    loadBtn.removeAttribute('onclick');
+                    loadBtn.addEventListener('click', loadFile);
+                }
+            });
         </script>
     </body>
     </html>
