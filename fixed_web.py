@@ -503,9 +503,8 @@ def index():
                 // N0 calculation
                 const n0 = Math.pow(stdDev / (avgProfit), 2);
                 
-                // Simple Risk of Ruin approximation
-                const ruinPoint = bankroll * (rorThreshold / 100);
-                const riskOfRuin = Math.max(0, Math.min(50, (ruinPoint / bankroll) * 10));
+                // Use the actual Risk of Ruin from the server calculation
+                const riskOfRuin = data.ror_percentage;
 
                 // Display results
                 document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
