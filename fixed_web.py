@@ -462,6 +462,8 @@ def index():
                         }
                     }
 
+                    // Store the original CSV content for backend API calls
+                    data.csvContent = content;
                     return data;
                 } catch (error) {
                     console.error('Error parsing CSV:', error);
@@ -652,9 +654,15 @@ def calculate_risk():
     """Calculate Risk of Ruin using actual simulation data"""
     try:
         data = request.json
-        csv_content = data.get('csv_content', '')
-        bankroll = float(data.get('bankroll', 1000))
-        bet_spread_input = data.get('bet_spread', {})
+        print(f"DEBUG: Received data keys: {list(data.keys()) if data else 'None'}")
+        
+        csv_content = data.get('csv_content', '') if data else ''
+        bankroll = float(data.get('bankroll', 1000)) if data else 1000
+        bet_spread_input = data.get('bet_spread', {}) if data else {}
+        
+        print(f"DEBUG: CSV content length: {len(csv_content)}")
+        print(f"DEBUG: Bankroll: {bankroll}")
+        print(f"DEBUG: Bet spread: {bet_spread_input}")
         
         # Parse bet spread from form data
         bet_spread = parse_bet_spread_from_string(bet_spread_input)
