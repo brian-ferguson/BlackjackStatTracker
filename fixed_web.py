@@ -496,24 +496,39 @@ def index():
                     const result = await response.json();
                     
                     if (response.ok) {
-                        // Calculate hourly metrics
-                        const hourlyEV = result.expected_value_per_hand * handsPerHour;
-                        const hourlyStdDev = result.standard_deviation * Math.sqrt(handsPerHour);
-                        const n0 = Math.pow(result.standard_deviation / result.expected_value_per_hand, 2);
+                        const data = result.results; // Access the nested results object
+                        
+                        // Add debugging to see what we received
+                        console.log('Backend response:', result);
+                        console.log('Results data:', data);
+                        
+                        if (!data) {
+                            updateStatusDiv('Error: No results data received from backend', 'error');
+                            return;
+                        }
+                        
+                        // Calculate hourly metrics with safety checks
+                        const hourlyEV = (data.expected_value_per_hand || 0) * handsPerHour;
+                        const hourlyStdDev = (data.standard_deviation || 0) * Math.sqrt(handsPerHour);
+                        const n0 = data.standard_deviation && data.expected_value_per_hand ? 
+                                  Math.pow(data.standard_deviation / data.expected_value_per_hand, 2) : 0;
 
-                        // Display results
+                        // Display results with safety checks
                         document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
                         document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
                         document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
-                        document.getElementById('risk-of-ruin').textContent = result.ror_percentage.toFixed(2) + '%';
+                        document.getElementById('risk-of-ruin').textContent = (data.ror_percentage || 0).toFixed(2) + '%';
+
+                        // Calculate overall edge from EV and average bet
+                        const overallEdge = data.expected_value_per_hand / data.average_bet_size;
 
                         // Detailed breakdown
                         const breakdown = document.getElementById('detailed-breakdown');
                         breakdown.innerHTML = `
                             <tr><th>Metric</th><th>Value</th></tr>
-                            <tr><td>Overall Edge</td><td>${(result.overall_edge * 100).toFixed(4)}%</td></tr>
-                            <tr><td>Average Bet</td><td>$${result.average_bet_size.toFixed(2)}</td></tr>
-                            <tr><td>Total Hands Simulated</td><td>${result.total_hands.toLocaleString()}</td></tr>
+                            <tr><td>Overall Edge</td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
+                            <tr><td>Average Bet</td><td>$${data.average_bet_size.toFixed(2)}</td></tr>
+                            <tr><td>Total Hands Simulated</td><td>${simulationData.totalHands || 'N/A'}</td></tr>
                             <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
                             <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
                             <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
