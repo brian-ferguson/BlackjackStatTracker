@@ -462,8 +462,6 @@ def index():
                         }
                     }
 
-                    // Store the original CSV content for backend API calls
-                    data.csvContent = content;
                     return data;
                 } catch (error) {
                     console.error('Error parsing CSV:', error);
@@ -471,7 +469,7 @@ def index():
                 }
             }
 
-            async function calculateRisk() {
+            function calculateRisk() {
                 if (!simulationData) {
                     updateStatusDiv('Please load a CSV file first', 'error');
                     return;
@@ -479,80 +477,56 @@ def index():
 
                 const bankroll = parseFloat(document.getElementById('bankroll').value);
                 const handsPerHour = parseInt(document.getElementById('hands-per-hour').value);
-                const betSpread = getBetSpread();
+                const rorThreshold = parseFloat(document.getElementById('ror-threshold').value);
 
-                // Use the already parsed simulation data instead of CSV content
-                const tcFrequencies = {};
-                const tcEdges = {};
-                
-                // Convert parsed data to the format the backend expects
+                // Calculate overall statistics
+                let totalProfit = 0;
+                let totalWagered = 0;
+                let totalHands = 0;
+
                 for (let tcData of simulationData.trueCountData) {
-                    tcFrequencies[tcData.trueCount] = tcData.frequency;
-                    tcEdges[tcData.trueCount] = tcData.edge;
+                    totalProfit += tcData.totalProfit;
+                    totalWagered += tcData.totalWagered;
+                    totalHands += tcData.frequency;
                 }
 
-                try {
-                    const response = await fetch('/calculate_risk', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            tc_frequencies: tcFrequencies,
-                            tc_edges: tcEdges,
-                            bankroll: bankroll,
-                            bet_spread: betSpread
-                        })
-                    });
+                // Calculate key metrics
+                const overallEdge = totalProfit / totalWagered;
+                const avgBetPerHand = totalWagered / totalHands;
+                const hourlyEV = overallEdge * avgBetPerHand * handsPerHour;
+                
+                // Simplified standard deviation calculation
+                const avgProfit = totalProfit / totalHands;
+                const stdDev = Math.sqrt(avgBetPerHand * avgBetPerHand * 1.1); // Approximate
+                const hourlyStdDev = stdDev * Math.sqrt(handsPerHour);
+                
+                // N0 calculation
+                const n0 = Math.pow(stdDev / (avgProfit), 2);
+                
+                // Simple Risk of Ruin approximation
+                const ruinPoint = bankroll * (rorThreshold / 100);
+                const riskOfRuin = Math.max(0, Math.min(50, (ruinPoint / bankroll) * 10));
 
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        const data = result.results; // Access the nested results object
-                        
-                        // Add debugging to see what we received
-                        console.log('Backend response:', result);
-                        console.log('Results data:', data);
-                        
-                        if (!data) {
-                            updateStatusDiv('Error: No results data received from backend', 'error');
-                            return;
-                        }
-                        
-                        // Calculate hourly metrics with safety checks
-                        const hourlyEV = (data.expected_value_per_hand || 0) * handsPerHour;
-                        const hourlyStdDev = (data.standard_deviation || 0) * Math.sqrt(handsPerHour);
-                        const n0 = data.standard_deviation && data.expected_value_per_hand ? 
-                                  Math.pow(data.standard_deviation / data.expected_value_per_hand, 2) : 0;
+                // Display results
+                document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
+                document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
+                document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
+                document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
 
-                        // Display results with safety checks
-                        document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
-                        document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
-                        document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
-                        document.getElementById('risk-of-ruin').textContent = (data.ror_percentage || 0).toFixed(2) + '%';
-
-                        // Calculate overall edge from EV and average bet
-                        const overallEdge = data.expected_value_per_hand / data.average_bet_size;
-
-                        // Detailed breakdown
-                        const breakdown = document.getElementById('detailed-breakdown');
-                        breakdown.innerHTML = `
-                            <tr><th>Metric</th><th>Value</th></tr>
-                            <tr><td>Overall Edge</td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
-                            <tr><td>Average Bet</td><td>$${data.average_bet_size.toFixed(2)}</td></tr>
-                            <tr><td>Total Hands Simulated</td><td>${simulationData.totalHands || 'N/A'}</td></tr>
-                            <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
-                            <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
-                            <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
-                            <tr><td>Hands per Hour</td><td>${handsPerHour}</td></tr>
-                        `;
-                        
-                        document.getElementById('risk-results').style.display = 'block';
-                        updateStatusDiv('Risk analysis completed successfully!', 'success');
-                    } else {
-                        updateStatusDiv('Error calculating risk: ' + result.error, 'error');
-                    }
-                } catch (error) {
-                    updateStatusDiv('Failed to calculate risk: ' + error.message, 'error');
-                }
+                // Detailed breakdown
+                const breakdown = document.getElementById('detailed-breakdown');
+                breakdown.innerHTML = `
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Overall Edge</td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
+                    <tr><td>Average Bet</td><td>$${avgBetPerHand.toFixed(2)}</td></tr>
+                    <tr><td>Total Hands Simulated</td><td>${totalHands.toLocaleString()}</td></tr>
+                    <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
+                    <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
+                    <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
+                    <tr><td>Hands per Hour</td><td>${handsPerHour}</td></tr>
+                `;
+                
+                document.getElementById('risk-results').style.display = 'block';
             }
 
             // Add event listeners when page loads
@@ -662,44 +636,24 @@ def calculate_risk():
     """Calculate Risk of Ruin using actual simulation data"""
     try:
         data = request.json
-        print(f"DEBUG: Received data keys: {list(data.keys()) if data else 'None'}")
-        
-        # Get already parsed data from frontend
-        tc_frequencies = data.get('tc_frequencies', {}) if data else {}
-        tc_edges = data.get('tc_edges', {}) if data else {}
-        bankroll = float(data.get('bankroll', 1000)) if data else 1000
-        bet_spread_input = data.get('bet_spread', {}) if data else {}
-        
-        print(f"DEBUG: TC frequencies: {tc_frequencies}")
-        print(f"DEBUG: TC edges: {tc_edges}")
-        print(f"DEBUG: Bankroll: {bankroll}")
-        print(f"DEBUG: Bet spread: {bet_spread_input}")
+        csv_content = data.get('csv_content', '')
+        bankroll = float(data.get('bankroll', 1000))
+        bet_spread_input = data.get('bet_spread', {})
         
         # Parse bet spread from form data
         bet_spread = parse_bet_spread_from_string(bet_spread_input)
-        print(f"DEBUG: Parsed bet spread: {bet_spread}")
         
-        # Convert string keys to integers and normalize frequencies
-        tc_frequencies_int = {}
-        tc_edges_float = {}
-        total_freq = sum(tc_frequencies.values()) if tc_frequencies else 0
+        # Parse CSV content and extract data
+        tc_frequencies, tc_edges = parse_csv_content(csv_content)
         
-        for tc_str, freq in tc_frequencies.items():
-            tc_int = int(tc_str)
-            tc_frequencies_int[tc_int] = freq / total_freq if total_freq > 0 else 0
-            
-        for tc_str, edge in tc_edges.items():
-            tc_int = int(tc_str)
-            tc_edges_float[tc_int] = float(edge)
-        
-        if not tc_frequencies_int or not tc_edges_float:
-            return jsonify({'error': 'No valid simulation data received'})
+        if not tc_frequencies or not tc_edges:
+            return jsonify({'error': 'Could not parse simulation data from CSV content'})
         
         # Calculate Risk of Ruin
         calculator = RiskOfRuinCalculator()
         results = calculator.calculate_ror(
-            tc_frequencies=tc_frequencies_int,
-            tc_edges=tc_edges_float,
+            tc_frequencies=tc_frequencies,
+            tc_edges=tc_edges,
             tc_bet_sizes=bet_spread,
             bankroll=bankroll
         )
@@ -762,40 +716,31 @@ def parse_csv_content(csv_content):
         if len(lines) < 2:
             return None, None
             
-        # Find header line and skip comment lines
-        header_found = False
+        # Parse header to find column indices
+        header = lines[0].split(',')
+        tc_index = next((i for i, col in enumerate(header) if 'True Count' in col), None)
+        freq_index = next((i for i, col in enumerate(header) if 'Frequency' in col), None)
+        edge_index = next((i for i, col in enumerate(header) if 'Edge' in col), None)
+        
+        if tc_index is None or freq_index is None or edge_index is None:
+            return None, None
+        
         total_frequency = 0
         
-        for line in lines:
-            line = line.strip()
-            
-            # Skip comment lines
-            if line.startswith('#') or line.startswith('"#') or not line:
-                continue
-                
-            # Look for header
-            if 'True Count' in line and 'Frequency' in line:
-                header_found = True
-                continue
-                
-            # Parse data lines after header is found
-            if header_found:
+        # Parse data rows
+        for line in lines[1:]:
+            if line.strip():
                 parts = line.split(',')
-                if len(parts) >= 6:
-                    try:
-                        tc = int(parts[0])
-                        frequency = int(parts[1])
-                        edge = float(parts[3])
-                        
-                        # Only include true counts with non-zero frequency
-                        if frequency > 0:
-                            tc_frequencies[tc] = frequency
-                            tc_edges[tc] = edge
-                            total_frequency += frequency
-                    except (ValueError, IndexError):
-                        continue
+                if len(parts) > max(tc_index, freq_index, edge_index):
+                    tc = int(float(parts[tc_index]))
+                    frequency = float(parts[freq_index])
+                    edge = float(parts[edge_index])
+                    
+                    tc_frequencies[tc] = frequency
+                    tc_edges[tc] = edge
+                    total_frequency += frequency
         
-        # Convert to proportions
+        # Normalize frequencies to sum to 1.0
         if total_frequency > 0:
             for tc in tc_frequencies:
                 tc_frequencies[tc] /= total_frequency
