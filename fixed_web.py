@@ -75,7 +75,42 @@ def index():
                 <h2>🎯 Run New Simulation</h2>
                 
                 <div class="form-group">
-                    <label>Number of Shoes per Configuration:</label>
+                    <label>Number of Decks in Shoe:</label>
+                    <select id="deck-count">
+                        <option value="1">1 Deck</option>
+                        <option value="2" selected>2 Decks</option>
+                        <option value="3">3 Decks</option>
+                        <option value="4">4 Decks</option>
+                        <option value="6">6 Decks</option>
+                        <option value="8">8 Decks</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Penetration (decks dealt before shuffle):</label>
+                    <select id="penetration">
+                        <option value="0" selected>No Penetration (all cards)</option>
+                        <option value="0.25">0.25 decks</option>
+                        <option value="0.5">0.5 decks</option>
+                        <option value="0.75">0.75 decks</option>
+                        <option value="1.0">1.0 deck</option>
+                        <option value="1.25">1.25 decks</option>
+                        <option value="1.5">1.5 decks</option>
+                        <option value="1.75">1.75 decks</option>
+                        <option value="2.0">2.0 decks</option>
+                        <option value="2.25">2.25 decks</option>
+                        <option value="2.5">2.5 decks</option>
+                        <option value="2.75">2.75 decks</option>
+                        <option value="3.0">3.0 decks</option>
+                        <option value="3.25">3.25 decks</option>
+                        <option value="3.5">3.5 decks</option>
+                        <option value="3.75">3.75 decks</option>
+                        <option value="4.0">4.0 decks</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Number of Shoes to Simulate:</label>
                     <select id="num-shoes">
                         <option value="1000">1,000 (Quick Test)</option>
                         <option value="10000">10,000 (Medium Test)</option>
@@ -262,11 +297,15 @@ def index():
                 const betSpread = getBetSpread();
                 const tableRules = getTableRules();
                 const numShoes = parseInt(document.getElementById('num-shoes').value);
+                const deckCount = parseInt(document.getElementById('deck-count').value);
+                const penetration = parseFloat(document.getElementById('penetration').value);
 
                 const params = {
                     bet_spread: betSpread,
                     table_rules: tableRules,
-                    num_shoes: numShoes
+                    num_shoes: numShoes,
+                    deck_count: deckCount,
+                    penetration: penetration
                 };
 
                 try {
@@ -520,15 +559,17 @@ def start_simulation():
     bet_spread = data.get('bet_spread', {})
     table_rules = data.get('table_rules', {})
     num_shoes = data.get('num_shoes', 100000)
+    deck_count = data.get('deck_count', 2)
+    penetration = data.get('penetration', 0)
     
-    # Reset status
+    # Reset status for single configuration
     simulation_status = {
         'running': True,
         'progress': 0,
-        'current_config': 'Starting...',
-        'total_configs': 54,
+        'current_config': f'{deck_count} decks, {penetration} penetration',
+        'total_configs': 1,
         'completed_configs': 0,
-        'message': 'Initializing simulation...',
+        'message': f'Starting {deck_count}-deck simulation with {penetration} penetration...',
         'folder_name': '',
         'error': None
     }
