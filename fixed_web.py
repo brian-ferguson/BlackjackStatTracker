@@ -481,15 +481,23 @@ def index():
                 const handsPerHour = parseInt(document.getElementById('hands-per-hour').value);
                 const betSpread = getBetSpread();
 
-                // Convert simulation data to CSV format for the backend
-                const csvContent = simulationData.csvContent;
+                // Use the already parsed simulation data instead of CSV content
+                const tcFrequencies = {};
+                const tcEdges = {};
+                
+                // Convert parsed data to the format the backend expects
+                for (let tcData of simulationData.trueCountData) {
+                    tcFrequencies[tcData.trueCount] = tcData.frequency;
+                    tcEdges[tcData.trueCount] = tcData.edge;
+                }
 
                 try {
                     const response = await fetch('/calculate_risk', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            csv_content: csvContent,
+                            tc_frequencies: tcFrequencies,
+                            tc_edges: tcEdges,
                             bankroll: bankroll,
                             bet_spread: betSpread
                         })
@@ -656,11 +664,14 @@ def calculate_risk():
         data = request.json
         print(f"DEBUG: Received data keys: {list(data.keys()) if data else 'None'}")
         
-        csv_content = data.get('csv_content', '') if data else ''
+        # Get already parsed data from frontend
+        tc_frequencies = data.get('tc_frequencies', {}) if data else {}
+        tc_edges = data.get('tc_edges', {}) if data else {}
         bankroll = float(data.get('bankroll', 1000)) if data else 1000
         bet_spread_input = data.get('bet_spread', {}) if data else {}
         
-        print(f"DEBUG: CSV content length: {len(csv_content)}")
+        print(f"DEBUG: TC frequencies: {tc_frequencies}")
+        print(f"DEBUG: TC edges: {tc_edges}")
         print(f"DEBUG: Bankroll: {bankroll}")
         print(f"DEBUG: Bet spread: {bet_spread_input}")
         
@@ -668,19 +679,27 @@ def calculate_risk():
         bet_spread = parse_bet_spread_from_string(bet_spread_input)
         print(f"DEBUG: Parsed bet spread: {bet_spread}")
         
-        # Parse CSV content and extract data
-        tc_frequencies, tc_edges = parse_csv_content(csv_content)
-        print(f"DEBUG: Parsed TC frequencies: {tc_frequencies}")
-        print(f"DEBUG: Parsed TC edges: {tc_edges}")
+        # Convert string keys to integers and normalize frequencies
+        tc_frequencies_int = {}
+        tc_edges_float = {}
+        total_freq = sum(tc_frequencies.values()) if tc_frequencies else 0
         
-        if not tc_frequencies or not tc_edges:
-            return jsonify({'error': 'Could not parse simulation data from CSV content'})
+        for tc_str, freq in tc_frequencies.items():
+            tc_int = int(tc_str)
+            tc_frequencies_int[tc_int] = freq / total_freq if total_freq > 0 else 0
+            
+        for tc_str, edge in tc_edges.items():
+            tc_int = int(tc_str)
+            tc_edges_float[tc_int] = float(edge)
+        
+        if not tc_frequencies_int or not tc_edges_float:
+            return jsonify({'error': 'No valid simulation data received'})
         
         # Calculate Risk of Ruin
         calculator = RiskOfRuinCalculator()
         results = calculator.calculate_ror(
-            tc_frequencies=tc_frequencies,
-            tc_edges=tc_edges,
+            tc_frequencies=tc_frequencies_int,
+            tc_edges=tc_edges_float,
             tc_bet_sizes=bet_spread,
             bankroll=bankroll
         )
