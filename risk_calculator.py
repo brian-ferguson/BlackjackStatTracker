@@ -133,10 +133,12 @@ class RiskOfRuinCalculator:
         if not tc_frequencies:
             raise ValueError("True count frequencies cannot be empty")
         
-        # Check that frequencies sum to approximately 1
+        # Normalize frequencies to sum to 1.0
         freq_sum = sum(tc_frequencies.values())
-        if abs(freq_sum - 1.0) > 0.01:
-            raise ValueError(f"True count frequencies should sum to 1.0, got {freq_sum}")
+        if freq_sum > 0:
+            # Normalize all frequencies so they sum to 1.0
+            for tc in tc_frequencies:
+                tc_frequencies[tc] = tc_frequencies[tc] / freq_sum
         
         # Ensure all required true counts have corresponding data
         for tc in tc_frequencies:
