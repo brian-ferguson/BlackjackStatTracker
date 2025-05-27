@@ -469,7 +469,7 @@ def index():
                 }
             }
 
-            function calculateRisk() {
+            async function calculateRisk() {
                 if (!simulationData) {
                     updateStatusDiv('Please load a CSV file first', 'error');
                     return;
@@ -503,14 +503,30 @@ def index():
                 // N0 calculation
                 const n0 = Math.pow(stdDev / (avgProfit), 2);
                 
-                // Use the actual Risk of Ruin from the server calculation
-                const riskOfRuin = data.ror_percentage;
-
-                // Display results
-                document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
-                document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
-                document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
-                document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
+                // Get the actual Risk of Ruin from server calculation
+                try {
+                    const response = await fetch('/calculate_risk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            csv_content: simulationData.csvContent,
+                            bankroll: bankroll,
+                            bet_spread: simulationData.betSpread
+                        })
+                    });
+                    
+                    const rorData = await response.json();
+                    const riskOfRuin = rorData.ror_percentage;
+                    
+                    // Display results
+                    document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
+                    document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
+                    document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
+                    document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
+                } catch (error) {
+                    console.error('Risk calculation failed:', error);
+                    document.getElementById('risk-of-ruin').textContent = 'Error';
+                }
 
                 // Detailed breakdown
                 const breakdown = document.getElementById('detailed-breakdown');
