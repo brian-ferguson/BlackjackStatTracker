@@ -656,8 +656,8 @@ def calculate_risk():
         bankroll = float(data.get('bankroll', 1000))
         bet_spread_input = data.get('bet_spread', {})
         
-        # Parse bet spread from form data
-        bet_spread = parse_bet_spread_from_string(bet_spread_input)
+        # Use bet spread directly (it's already in the correct format from JavaScript)
+        bet_spread = bet_spread_input
         
         # Parse CSV content and extract data
         tc_frequencies, tc_edges = parse_csv_content(csv_content)
