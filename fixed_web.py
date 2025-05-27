@@ -729,6 +729,12 @@ def parse_csv_content(csv_content):
     tc_frequencies = {}
     tc_edges = {}
     
+    # Debug logging
+    print(f"CSV content type: {type(csv_content)}")
+    print(f"CSV content length: {len(csv_content) if csv_content else 0}")
+    if csv_content:
+        print(f"First 200 chars: {csv_content[:200]}")
+    
     try:
         lines = csv_content.strip().split('\n')
         if len(lines) < 2:
