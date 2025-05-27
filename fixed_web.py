@@ -699,8 +699,10 @@ def calculate_risk():
         tc_frequency_proportions = {tc: freq / total_hands for tc, freq in tc_frequencies.items()}
         
         # Calculate Risk of Ruin with threshold adjustment
-        # Threshold defines what % loss constitutes "ruin" (e.g., 25% = ruin when down 25% of bankroll)
-        adjusted_bankroll = bankroll * (ror_threshold / 100.0)
+        # Threshold defines what % remaining constitutes "ruin" (e.g., 5% = ruin when bankroll drops to 5% of original)
+        # So we calculate risk of losing (100% - threshold%) of the bankroll
+        loss_amount = bankroll * ((100.0 - ror_threshold) / 100.0)
+        adjusted_bankroll = loss_amount
         
         calculator = RiskOfRuinCalculator()
         results = calculator.calculate_ror(
