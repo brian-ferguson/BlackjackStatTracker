@@ -658,10 +658,18 @@ def calculate_risk():
         bankroll = float(data.get('bankroll', 1000))
         bet_spread_input = data.get('bet_spread', {})
         
-        # Convert bet spread keys to integers to match true count format
-        bet_spread = {}
-        for key, value in bet_spread_input.items():
-            bet_spread[int(key)] = float(value)
+        # Handle bet spread - could be string from CSV or dict from form
+        if isinstance(bet_spread_input, str):
+            # Use default bet spread if it's a string from CSV
+            bet_spread = {
+                -10: 0, -9: 0, -8: 0, -7: 0, -6: 0, -5: 0, -4: 0, -3: 0, -2: 0, -1: 0, 0: 0,
+                1: 5, 2: 10, 3: 15, 4: 25, 5: 25, 6: 25, 7: 25, 8: 25, 9: 25, 10: 25
+            }
+        else:
+            # Convert bet spread keys to integers if it's a dictionary
+            bet_spread = {}
+            for key, value in bet_spread_input.items():
+                bet_spread[int(key)] = float(value)
         
         # Parse CSV content and extract data
         tc_frequencies, tc_edges = parse_csv_content_fixed(csv_content)

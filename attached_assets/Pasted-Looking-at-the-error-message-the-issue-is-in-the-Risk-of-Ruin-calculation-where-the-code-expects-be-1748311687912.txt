@@ -1,0 +1,37 @@
+Looking at the error message, the issue is in the Risk of Ruin calculation where the code expects bet_spread_input to be a dictionary with an items() method, but it's receiving a string instead.
+
+Let me show you the relevant code sections causing this error:
+
+In fixed_web.py, the /calculate_risk route has this problematic code:
+
+@app.route('/calculate_risk', methods=['POST'])
+def calculate_risk():
+    """Calculate Risk of Ruin using actual simulation data"""
+    try:
+        data = request.json
+        csv_content = data.get('csv_content', '')
+        bankroll = float(data.get('bankroll', 1000))
+        bet_spread_input = data.get('bet_spread', {})  # This is getting a string, not a dict
+        
+        # Convert bet spread keys to integers to match true count format
+        bet_spread = {}
+        for key, value in bet_spread_input.items():  # ERROR: 'str' object has no attribute 'items'
+            bet_spread[int(key)] = float(value)
+The problem is that the JavaScript is sending bet_spread as a string (parsed from the CSV), but the Python code expects it to be a dictionary.
+
+Looking at the JavaScript code in the same file, in the calculateRisk() function:
+
+const response = await fetch('/calculate_risk', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        csv_content: simulationData.csvContent,
+        bankroll: bankroll,
+        bet_spread: simulationData.betSpread  // This is a string from CSV parsing
+    })
+});
+The issue is that simulationData.betSpread is being set as a string when parsing the CSV, but the server expects a dictionary. Let me fix this:
+
+fixed_web.py
+Fix bet spread parsing error in calculate_risk route
+The error occurs because the JavaScript is sending the bet spread as a string (from the CSV file) but the Python code expects a dictionary. The fix handles both cases - when it receives a string (uses a default bet spread) or when it receives a dictionary (converts keys to integers as intended
