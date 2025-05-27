@@ -519,13 +519,21 @@ def index():
                     
                     const rorData = await response.json();
                     console.log('Server response:', rorData); // Debug log
-                    const riskOfRuin = rorData.ror_percentage || 0;
                     
-                    // Display results
-                    document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
-                    document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
-                    document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
-                    document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
+                    if (rorData.success) {
+                        const riskOfRuin = rorData.results.ror_percentage || 0;
+                        const expectedValue = rorData.results.expected_value_per_hand || 0;
+                        const variance = rorData.results.variance || 0;
+                        const stdDev = Math.sqrt(variance);
+                        
+                        // Display results using actual server calculations
+                        document.getElementById('hourly-ev').textContent = '$' + (expectedValue * handsPerHour).toFixed(2);
+                        document.getElementById('std-dev').textContent = '$' + (stdDev * Math.sqrt(handsPerHour)).toFixed(2);
+                        document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
+                        document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
+                    } else {
+                        document.getElementById('risk-of-ruin').textContent = 'Error';
+                    }
                 } catch (error) {
                     console.error('Risk calculation failed:', error);
                     document.getElementById('risk-of-ruin').textContent = 'Error';
