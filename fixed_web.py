@@ -662,7 +662,7 @@ def calculate_risk():
         bet_spread = bet_spread_input
         
         # Parse CSV content and extract data
-        tc_frequencies, tc_edges = parse_csv_content(csv_content)
+        tc_frequencies, tc_edges = parse_csv_content_fixed(csv_content)
         
         if not tc_frequencies or not tc_edges:
             return jsonify({'error': 'Could not parse simulation data from CSV content'})
@@ -723,6 +723,45 @@ def parse_bet_spread_from_string(bet_spread_input):
         bet_spread[tc] = tc5plus_bet
             
     return bet_spread
+
+def parse_csv_content_fixed(csv_content):
+    """Parse CSV content string and extract true count data - working version"""
+    tc_frequencies = {}
+    tc_edges = {}
+    
+    try:
+        lines = csv_content.strip().split('\n')
+        header_found = False
+        
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+                
+            if 'True Count,Frequency,Percentage,Player Edge' in line:
+                header_found = True
+                continue
+                
+            if header_found:
+                line = line.replace('"', '')
+                parts = line.split(',')
+                
+                if len(parts) >= 4:
+                    try:
+                        tc = int(parts[0])
+                        frequency = int(parts[1].replace(',', ''))
+                        percentage = float(parts[2])
+                        edge = float(parts[3])
+                        
+                        if frequency > 0:
+                            tc_frequencies[tc] = percentage / 100.0
+                            tc_edges[tc] = edge
+                    except (ValueError, IndexError):
+                        continue
+        
+        return tc_frequencies, tc_edges
+    except Exception:
+        return None, None
 
 def parse_csv_content(csv_content):
     """Parse CSV content string and extract true count data"""
