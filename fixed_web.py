@@ -469,7 +469,7 @@ def index():
                 }
             }
 
-            function calculateRisk() {
+            async function calculateRisk() {
                 if (!simulationData) {
                     updateStatusDiv('Please load a CSV file first', 'error');
                     return;
@@ -477,56 +477,57 @@ def index():
 
                 const bankroll = parseFloat(document.getElementById('bankroll').value);
                 const handsPerHour = parseInt(document.getElementById('hands-per-hour').value);
-                const rorThreshold = parseFloat(document.getElementById('ror-threshold').value);
+                const betSpread = getBetSpread();
 
-                // Calculate overall statistics
-                let totalProfit = 0;
-                let totalWagered = 0;
-                let totalHands = 0;
+                // Convert simulation data to CSV format for the backend
+                const csvContent = simulationData.csvContent;
 
-                for (let tcData of simulationData.trueCountData) {
-                    totalProfit += tcData.totalProfit;
-                    totalWagered += tcData.totalWagered;
-                    totalHands += tcData.frequency;
+                try {
+                    const response = await fetch('/calculate_risk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            csv_content: csvContent,
+                            bankroll: bankroll,
+                            bet_spread: betSpread
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        // Calculate hourly metrics
+                        const hourlyEV = result.expected_value_per_hand * handsPerHour;
+                        const hourlyStdDev = result.standard_deviation * Math.sqrt(handsPerHour);
+                        const n0 = Math.pow(result.standard_deviation / result.expected_value_per_hand, 2);
+
+                        // Display results
+                        document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
+                        document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
+                        document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
+                        document.getElementById('risk-of-ruin').textContent = result.ror_percentage.toFixed(2) + '%';
+
+                        // Detailed breakdown
+                        const breakdown = document.getElementById('detailed-breakdown');
+                        breakdown.innerHTML = `
+                            <tr><th>Metric</th><th>Value</th></tr>
+                            <tr><td>Overall Edge</td><td>${(result.overall_edge * 100).toFixed(4)}%</td></tr>
+                            <tr><td>Average Bet</td><td>$${result.average_bet_size.toFixed(2)}</td></tr>
+                            <tr><td>Total Hands Simulated</td><td>${result.total_hands.toLocaleString()}</td></tr>
+                            <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
+                            <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
+                            <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
+                            <tr><td>Hands per Hour</td><td>${handsPerHour}</td></tr>
+                        `;
+                        
+                        document.getElementById('risk-results').style.display = 'block';
+                        updateStatusDiv('Risk analysis completed successfully!', 'success');
+                    } else {
+                        updateStatusDiv('Error calculating risk: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    updateStatusDiv('Failed to calculate risk: ' + error.message, 'error');
                 }
-
-                // Calculate key metrics
-                const overallEdge = totalProfit / totalWagered;
-                const avgBetPerHand = totalWagered / totalHands;
-                const hourlyEV = overallEdge * avgBetPerHand * handsPerHour;
-                
-                // Simplified standard deviation calculation
-                const avgProfit = totalProfit / totalHands;
-                const stdDev = Math.sqrt(avgBetPerHand * avgBetPerHand * 1.1); // Approximate
-                const hourlyStdDev = stdDev * Math.sqrt(handsPerHour);
-                
-                // N0 calculation
-                const n0 = Math.pow(stdDev / (avgProfit), 2);
-                
-                // Simple Risk of Ruin approximation
-                const ruinPoint = bankroll * (rorThreshold / 100);
-                const riskOfRuin = Math.max(0, Math.min(50, (ruinPoint / bankroll) * 10));
-
-                // Display results
-                document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
-                document.getElementById('std-dev').textContent = '$' + hourlyStdDev.toFixed(2);
-                document.getElementById('n0-hands').textContent = Math.round(n0).toLocaleString();
-                document.getElementById('risk-of-ruin').textContent = riskOfRuin.toFixed(2) + '%';
-
-                // Detailed breakdown
-                const breakdown = document.getElementById('detailed-breakdown');
-                breakdown.innerHTML = `
-                    <tr><th>Metric</th><th>Value</th></tr>
-                    <tr><td>Overall Edge</td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
-                    <tr><td>Average Bet</td><td>$${avgBetPerHand.toFixed(2)}</td></tr>
-                    <tr><td>Total Hands Simulated</td><td>${totalHands.toLocaleString()}</td></tr>
-                    <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
-                    <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
-                    <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
-                    <tr><td>Hands per Hour</td><td>${handsPerHour}</td></tr>
-                `;
-                
-                document.getElementById('risk-results').style.display = 'block';
             }
 
             // Add event listeners when page loads
