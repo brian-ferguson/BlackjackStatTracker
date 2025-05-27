@@ -396,6 +396,8 @@ def index():
                     simulationData = parseCSV(csvText);
                     
                     if (simulationData) {
+                        // Store the raw CSV content for server processing
+                        simulationData.csvContent = csvText;
                         document.getElementById('bankroll-calculator').style.display = 'block';
                         updateStatusDiv('CSV loaded successfully! Enter your parameters below.', 'success');
                     } else {
