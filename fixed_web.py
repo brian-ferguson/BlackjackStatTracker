@@ -666,9 +666,12 @@ def calculate_risk():
         
         # Parse bet spread from form data
         bet_spread = parse_bet_spread_from_string(bet_spread_input)
+        print(f"DEBUG: Parsed bet spread: {bet_spread}")
         
         # Parse CSV content and extract data
         tc_frequencies, tc_edges = parse_csv_content(csv_content)
+        print(f"DEBUG: Parsed TC frequencies: {tc_frequencies}")
+        print(f"DEBUG: Parsed TC edges: {tc_edges}")
         
         if not tc_frequencies or not tc_edges:
             return jsonify({'error': 'Could not parse simulation data from CSV content'})
@@ -765,9 +768,11 @@ def parse_csv_content(csv_content):
                         frequency = int(parts[1])
                         edge = float(parts[3])
                         
-                        tc_frequencies[tc] = frequency
-                        tc_edges[tc] = edge
-                        total_frequency += frequency
+                        # Only include true counts with non-zero frequency
+                        if frequency > 0:
+                            tc_frequencies[tc] = frequency
+                            tc_edges[tc] = edge
+                            total_frequency += frequency
                     except (ValueError, IndexError):
                         continue
         
