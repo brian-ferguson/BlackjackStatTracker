@@ -730,15 +730,15 @@ def parse_csv_content_fixed(csv_content):
     tc_edges = {}
     
     try:
-        lines = csv_content.strip().split('\n')
+        lines = str(csv_content).strip().split('\n')
         header_found = False
         
         for line in lines:
-            line = line.strip()
+            line = str(line).strip()
             if not line or line.startswith('#'):
                 continue
                 
-            if 'True Count,Frequency,Percentage,Player Edge' in str(line):
+            if 'True Count,Frequency,Percentage,Player Edge' in line:
                 header_found = True
                 continue
                 
@@ -748,15 +748,15 @@ def parse_csv_content_fixed(csv_content):
                 
                 if len(parts) >= 4:
                     try:
-                        tc = int(parts[0])
-                        frequency = int(parts[1].replace(',', ''))
-                        percentage = float(parts[2])
-                        edge = float(parts[3])
+                        tc = int(float(str(parts[0]).strip()))
+                        frequency = int(float(str(parts[1]).replace(',', '').strip()))
+                        percentage = float(str(parts[2]).strip())
+                        edge = float(str(parts[3]).strip())
                         
                         if frequency > 0:
                             tc_frequencies[tc] = percentage / 100.0
                             tc_edges[tc] = edge
-                    except (ValueError, IndexError):
+                    except (ValueError, IndexError, TypeError):
                         continue
         
         return tc_frequencies, tc_edges
