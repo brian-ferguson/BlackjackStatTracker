@@ -513,7 +513,8 @@ def index():
                         body: JSON.stringify({
                             csv_content: simulationData.csvContent,
                             bankroll: bankroll,
-                            bet_spread: simulationData.betSpread
+                            bet_spread: simulationData.betSpread,
+                            ror_threshold: rorThreshold
                         })
                     });
                     
@@ -665,6 +666,7 @@ def calculate_risk():
         csv_content = data.get('csv_content', '')
         bankroll = float(data.get('bankroll', 1000))
         bet_spread_input = data.get('bet_spread', {})
+        ror_threshold = float(data.get('ror_threshold', 5.0))  # Default 5% threshold
         
         # Handle bet spread - could be string from CSV or dict from form
         if isinstance(bet_spread_input, str):
@@ -685,13 +687,16 @@ def calculate_risk():
         if not tc_frequencies or not tc_edges:
             return jsonify({'error': 'Could not parse simulation data from CSV content'})
         
-        # Calculate Risk of Ruin
+        # Calculate Risk of Ruin with threshold adjustment
+        # Threshold defines what % loss constitutes "ruin" (e.g., 25% = ruin when down 25% of bankroll)
+        adjusted_bankroll = bankroll * (ror_threshold / 100.0)
+        
         calculator = RiskOfRuinCalculator()
         results = calculator.calculate_ror(
             tc_frequencies=tc_frequencies,
             tc_edges=tc_edges,
             tc_bet_sizes=bet_spread,
-            bankroll=bankroll
+            bankroll=adjusted_bankroll
         )
         
         # Format results for web display
@@ -706,6 +711,7 @@ def calculate_risk():
             'average_bet_size': results['average_bet_size'],
             'is_positive_ev': results['is_positive_ev'],
             'bankroll': bankroll,
+            'ror_threshold': ror_threshold,
             'formatted_output': format_ror_results(results)
         }
         
