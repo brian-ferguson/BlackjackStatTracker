@@ -516,7 +516,8 @@ def index():
                     });
                     
                     const rorData = await response.json();
-                    const riskOfRuin = rorData.ror_percentage;
+                    console.log('Server response:', rorData); // Debug log
+                    const riskOfRuin = rorData.ror_percentage || 0;
                     
                     // Display results
                     document.getElementById('hourly-ev').textContent = '$' + hourlyEV.toFixed(2);
