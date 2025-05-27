@@ -201,7 +201,7 @@ def index():
                 <div id="results" style="display:none;">
                     <h3>📊 Results Ready!</h3>
                     <p>Your simulation results have been saved to folder: <strong id="folder-name"></strong></p>
-                    <p>This folder contains all 54 CSV files with your custom bet spread analysis.</p>
+                    <p>This folder contains the CSV file for your selected deck count and penetration configuration.</p>
                 </div>
             </div>
 
@@ -577,7 +577,7 @@ def start_simulation():
     # Start simulation thread
     simulation_thread = threading.Thread(
         target=run_simulation_thread,
-        args=(bet_spread, table_rules, num_shoes)
+        args=(bet_spread, table_rules, num_shoes, deck_count, penetration)
     )
     simulation_thread.start()
     
@@ -595,22 +595,36 @@ def get_status():
     """Get simulation status"""
     return jsonify(simulation_status)
 
-def run_simulation_thread(bet_spread, table_rules, num_shoes):
-    """Run simulation in background thread"""
+def run_simulation_thread(bet_spread, table_rules, num_shoes, deck_count, penetration):
+    """Run simulation in background thread for single configuration"""
     global simulation_status
     
     try:
-        def progress_callback(completed, total, config_name):
-            simulation_status['completed_configs'] = completed
-            simulation_status['total_configs'] = total
-            simulation_status['current_config'] = config_name
-            simulation_status['message'] = f'Processing configuration {completed}/{total}: {config_name}'
+        # Import here to avoid circular imports
+        from custom_simulation import simulate_configuration_custom, save_results_custom, create_bet_spread_folder
         
-        folder_name = run_custom_simulation(bet_spread, num_shoes, table_rules, progress_callback)
+        def progress_callback(progress):
+            simulation_status['message'] = f'Progress: {progress:.1f}%'
+        
+        # Create folder name for this specific configuration
+        folder_name = create_bet_spread_folder(bet_spread, num_shoes)
+        config_name = f'{deck_count}decks-{penetration}penetration'
+        
+        simulation_status['current_config'] = config_name
+        simulation_status['message'] = f'Running {config_name}...'
+        
+        # Run single configuration simulation
+        true_count_stats, total_hands = simulate_configuration_custom(
+            deck_count, penetration, num_shoes, bet_spread, table_rules, progress_callback
+        )
+        
+        # Save results
+        save_results_custom(deck_count, penetration, num_shoes, true_count_stats, total_hands, folder_name, bet_spread)
         
         simulation_status['running'] = False
+        simulation_status['completed_configs'] = 1
         simulation_status['folder_name'] = folder_name
-        simulation_status['message'] = 'Simulation completed successfully!'
+        simulation_status['message'] = f'Single configuration simulation completed! Results saved to {folder_name}'
         
     except Exception as e:
         simulation_status['running'] = False
