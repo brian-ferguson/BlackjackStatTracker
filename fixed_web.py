@@ -740,31 +740,38 @@ def parse_csv_content(csv_content):
         if len(lines) < 2:
             return None, None
             
-        # Parse header to find column indices
-        header = lines[0].split(',')
-        tc_index = next((i for i, col in enumerate(header) if 'True Count' in col), None)
-        freq_index = next((i for i, col in enumerate(header) if 'Frequency' in col), None)
-        edge_index = next((i for i, col in enumerate(header) if 'Edge' in col), None)
-        
-        if tc_index is None or freq_index is None or edge_index is None:
-            return None, None
-        
+        # Find header line and skip comment lines
+        header_found = False
         total_frequency = 0
         
-        # Parse data rows
-        for line in lines[1:]:
-            if line.strip():
+        for line in lines:
+            line = line.strip()
+            
+            # Skip comment lines
+            if line.startswith('#') or line.startswith('"#') or not line:
+                continue
+                
+            # Look for header
+            if 'True Count' in line and 'Frequency' in line:
+                header_found = True
+                continue
+                
+            # Parse data lines after header is found
+            if header_found:
                 parts = line.split(',')
-                if len(parts) > max(tc_index, freq_index, edge_index):
-                    tc = int(float(parts[tc_index]))
-                    frequency = float(parts[freq_index])
-                    edge = float(parts[edge_index])
-                    
-                    tc_frequencies[tc] = frequency
-                    tc_edges[tc] = edge
-                    total_frequency += frequency
+                if len(parts) >= 6:
+                    try:
+                        tc = int(parts[0])
+                        frequency = int(parts[1])
+                        edge = float(parts[3])
+                        
+                        tc_frequencies[tc] = frequency
+                        tc_edges[tc] = edge
+                        total_frequency += frequency
+                    except (ValueError, IndexError):
+                        continue
         
-        # Normalize frequencies to sum to 1.0
+        # Convert to proportions
         if total_frequency > 0:
             for tc in tc_frequencies:
                 tc_frequencies[tc] /= total_frequency
