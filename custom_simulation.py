@@ -72,17 +72,23 @@ def create_bet_spread_folder(bet_spread, num_shoes):
 
 def simulate_configuration_custom(deck_count, penetration, num_shoes, bet_spread, table_rules=None, progress_callback=None):
     """Simulate one configuration with custom bet spread and table rules"""
-    # Set optimal default rules if none provided
+    # Use rules from UI, with sensible defaults only if none provided
     if table_rules is None:
-        table_rules = {
-            'dealer_hits_soft17': False,  # Dealer stands on soft 17 (favorable)
-            'surrender_allowed': True,    # Surrender allowed (favorable)
-            'double_after_split': True,
-            'split_aces': True,
-            'blackjack_pays': 1.5
-        }
+        table_rules = {}
     
-    game = AdvancedBlackjackGame(table_rules)
+    # Set default values only for missing keys
+    default_rules = {
+        'dealer_hits_soft17': True,   # Default to H17 (can be overridden by UI)
+        'surrender_allowed': False,   # Default no surrender (can be overridden by UI)
+        'double_after_split': True,
+        'split_aces': True,
+        'blackjack_pays': 1.5
+    }
+    
+    # Merge UI rules with defaults (UI rules take precedence)
+    final_rules = {**default_rules, **table_rules}
+    
+    game = AdvancedBlackjackGame(final_rules)
     
     # Statistics tracking
     true_count_stats = {}
