@@ -484,21 +484,27 @@ def index():
                 // Calculate overall statistics
                 let totalProfit = 0;
                 let totalWagered = 0;
-                let totalHands = 0;
+                let totalHandsPlayed = 0; // Only hands where we actually bet
+                let totalHandsDealt = 0;  // All hands including sit-outs
 
                 for (let tcData of simulationData.trueCountData) {
                     totalProfit += tcData.totalProfit;
                     totalWagered += tcData.totalWagered;
-                    totalHands += tcData.frequency;
+                    totalHandsDealt += tcData.frequency;
+                    
+                    // Only count hands where we actually wagered money
+                    if (tcData.totalWagered > 0) {
+                        totalHandsPlayed += tcData.frequency;
+                    }
                 }
 
-                // Calculate key metrics
+                // Calculate key metrics - use only hands where we actually bet
                 const overallEdge = totalProfit / totalWagered;
-                const avgBetPerHand = totalWagered / totalHands;
+                const avgBetPerHand = totalWagered / totalHandsPlayed; // Fixed: use hands played, not all hands
                 const hourlyEV = overallEdge * avgBetPerHand * handsPerHour;
                 
                 // Simplified standard deviation calculation
-                const avgProfit = totalProfit / totalHands;
+                const avgProfit = totalProfit / totalHandsPlayed;
                 const stdDev = Math.sqrt(avgBetPerHand * avgBetPerHand * 1.1); // Approximate
                 const hourlyStdDev = stdDev * Math.sqrt(handsPerHour);
                 
@@ -546,7 +552,8 @@ def index():
                     <tr><th>Metric</th><th>Value</th></tr>
                     <tr><td>Overall Edge</td><td>${(overallEdge * 100).toFixed(4)}%</td></tr>
                     <tr><td>Average Bet</td><td>$${avgBetPerHand.toFixed(2)}</td></tr>
-                    <tr><td>Total Hands Simulated</td><td>${totalHands.toLocaleString()}</td></tr>
+                    <tr><td>Total Hands Played</td><td>${totalHandsPlayed.toLocaleString()}</td></tr>
+                    <tr><td>Total Hands Dealt</td><td>${totalHandsDealt.toLocaleString()}</td></tr>
                     <tr><td>Deck Configuration</td><td>${simulationData.deckCount} decks, ${simulationData.penetration}</td></tr>
                     <tr><td>Betting Strategy</td><td>${simulationData.betSpread || 'N/A'}</td></tr>
                     <tr><td>Bankroll</td><td>$${bankroll.toLocaleString()}</td></tr>
