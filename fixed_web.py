@@ -687,13 +687,17 @@ def calculate_risk():
         if not tc_frequencies or not tc_edges:
             return jsonify({'error': 'Could not parse simulation data from CSV content'})
         
+        # Convert frequency counts to proportions for the RoR calculator
+        total_hands = sum(tc_frequencies.values())
+        tc_frequency_proportions = {tc: freq / total_hands for tc, freq in tc_frequencies.items()}
+        
         # Calculate Risk of Ruin with threshold adjustment
         # Threshold defines what % loss constitutes "ruin" (e.g., 25% = ruin when down 25% of bankroll)
         adjusted_bankroll = bankroll * (ror_threshold / 100.0)
         
         calculator = RiskOfRuinCalculator()
         results = calculator.calculate_ror(
-            tc_frequencies=tc_frequencies,
+            tc_frequencies=tc_frequency_proportions,
             tc_edges=tc_edges,
             tc_bet_sizes=bet_spread,
             bankroll=adjusted_bankroll
@@ -778,7 +782,7 @@ def parse_csv_content_fixed(csv_content):
                         edge = float(str(parts[3]).strip())
                         
                         if frequency > 0:
-                            tc_frequencies[tc] = percentage / 100.0
+                            tc_frequencies[tc] = frequency  # Use actual frequency counts
                             tc_edges[tc] = edge
                     except (ValueError, IndexError, TypeError):
                         continue
