@@ -738,7 +738,7 @@ def parse_csv_content_fixed(csv_content):
             if not line or line.startswith('#'):
                 continue
                 
-            if 'True Count,Frequency,Percentage,Player Edge' in line:
+            if 'True Count,Frequency,Percentage,Player Edge' in str(line):
                 header_found = True
                 continue
                 
